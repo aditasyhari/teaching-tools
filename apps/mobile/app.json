@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "WaliKelas Remote",
+    "slug": "walikelas-remote",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "id.walikelas.tools.remote"
+    }
+  }
+}

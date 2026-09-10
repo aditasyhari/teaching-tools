@@ -1,0 +1,13 @@
+# Ignore documentation and agent rules
+docs/
+AGENTS.md
+
+# Dependencies & Build artifacts
+node_modules/
+dist/
+.next/
+.expo/
+coverage/
+pnpm-lock.yaml
+next-env.d.ts
+

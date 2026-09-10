@@ -1,0 +1,128 @@
+import type { ToolMetadata } from '@walikelas/types';
+
+export const TOOLS: ToolMetadata[] = [
+  // P0 Local Tools
+  {
+    id: 'timer',
+    name: 'Timer',
+    description: 'Stopwatch, hitung mundur, dan pengingat waktu pembelajaran.',
+    category: 'LOCAL',
+    isInteractive: false,
+    requiresAuth: false,
+    priority: 'P0',
+  },
+  {
+    id: 'random-picker',
+    name: 'Random Picker',
+    description: 'Pemilih acak nama siswa, giliran, atau kelompok.',
+    category: 'LOCAL',
+    isInteractive: false,
+    requiresAuth: false,
+    priority: 'P0',
+  },
+  {
+    id: 'group-maker',
+    name: 'Group Maker',
+    description: 'Pembagi kelompok otomatis berdasarkan jumlah anggota atau jumlah tim.',
+    category: 'LOCAL',
+    isInteractive: false,
+    requiresAuth: false,
+    priority: 'P0',
+  },
+  {
+    id: 'scoreboard',
+    name: 'Scoreboard',
+    description: 'Papan skor sederhana untuk kompetisi tim di kelas.',
+    category: 'LOCAL',
+    isInteractive: false,
+    requiresAuth: false,
+    priority: 'P1',
+  },
+  {
+    id: 'teacher-notes',
+    name: 'Teacher Notes',
+    description: 'Catatan cepat guru selama sesi pembelajaran berlangsung.',
+    category: 'LOCAL',
+    isInteractive: false,
+    requiresAuth: false,
+    priority: 'P0',
+  },
+
+  // P0 Interactive Tools
+  {
+    id: 'live-quiz',
+    name: 'Live Quiz',
+    description: 'Kuis interaktif langsung dengan leaderboard dan feedback instan.',
+    category: 'INTERACTIVE',
+    isInteractive: true,
+    requiresAuth: true,
+    priority: 'P0',
+  },
+  {
+    id: 'live-poll',
+    name: 'Live Poll',
+    description: 'Jajak pendapat kilat untuk mengukur pemahaman atau opini siswa.',
+    category: 'INTERACTIVE',
+    isInteractive: true,
+    requiresAuth: true,
+    priority: 'P0',
+  },
+
+  // P1 Interactive Tools
+  {
+    id: 'raise-hand',
+    name: 'Raise Hand',
+    description: 'Antrean angkat tangan digital untuk partisipasi teratur.',
+    category: 'INTERACTIVE',
+    isInteractive: true,
+    requiresAuth: true,
+    priority: 'P1',
+  },
+  {
+    id: 'question-box',
+    name: 'Question Box',
+    description: 'Kotak pertanyaan anonim atau bernama dari siswa.',
+    category: 'INTERACTIVE',
+    isInteractive: true,
+    requiresAuth: true,
+    priority: 'P1',
+  },
+  {
+    id: 'brainstorm-board',
+    name: 'Brainstorm Board',
+    description: 'Papan ide kolaboratif untuk mengumpulkan gagasan kelas.',
+    category: 'INTERACTIVE',
+    isInteractive: true,
+    requiresAuth: true,
+    priority: 'P1',
+  },
+  {
+    id: 'word-cloud',
+    name: 'Word Cloud',
+    description: 'Visualisasi kata dinamis dari respon singkat seluruh kelas.',
+    category: 'INTERACTIVE',
+    isInteractive: true,
+    requiresAuth: true,
+    priority: 'P1',
+  },
+  {
+    id: 'exit-ticket',
+    name: 'Exit Ticket',
+    description: 'Refleksi singkat di akhir pelajaran sebelum siswa meninggalkan kelas.',
+    category: 'INTERACTIVE',
+    isInteractive: true,
+    requiresAuth: true,
+    priority: 'P1',
+  },
+
+  // P2 Content Tool
+  {
+    id: 'flashcards',
+    name: 'Flashcards',
+    description: 'Kartu pengingat materi untuk pengulangan dan penguatan konsep.',
+    category: 'CONTENT',
+    isInteractive: false,
+    requiresAuth: false,
+    priority: 'P2',
+  },
+];

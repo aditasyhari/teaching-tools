@@ -1,0 +1,6 @@
+export const JOIN_CODE_LENGTH = 6;
+export const JOIN_CODE_CHARACTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excludes ambiguous chars: 0, O, 1, I
+
+export const SESSION_HEARTBEAT_INTERVAL_MS = 15_000;
+export const SESSION_INACTIVE_TIMEOUT_MS = 60_000;
+export const MAX_PARTICIPANT_NAME_LENGTH = 30;

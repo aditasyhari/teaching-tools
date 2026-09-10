@@ -1,0 +1,29 @@
+{
+  "name": "@walikelas/validation",
+  "version": "0.1.0",
+  "description": "Shared Zod validation schemas for WaliKelas Teaching Tools",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@walikelas/config": "workspace:*",
+    "@walikelas/types": "workspace:*",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}
