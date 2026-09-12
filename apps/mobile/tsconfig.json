@@ -3,7 +3,8 @@
   "compilerOptions": {
     "jsx": "react-native",
     "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "noEmit": true
   },
   "include": ["**/*.ts", "**/*.tsx"]
 }

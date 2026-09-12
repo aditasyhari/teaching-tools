@@ -27,14 +27,14 @@ const weightClasses = {
   bold: 'font-bold',
 };
 
-export const Text: React.FC<TextProps> = ({
+export function Text({
   as: Component = 'p',
   variant = 'body',
   weight,
   className,
   children,
   ...props
-}) => {
+}: TextProps): React.JSX.Element {
   return React.createElement(
     Component,
     {
@@ -43,4 +43,4 @@ export const Text: React.FC<TextProps> = ({
     },
     children,
   );
-};
+}

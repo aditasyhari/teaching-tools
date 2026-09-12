@@ -12,12 +12,12 @@ const sizeClasses = {
   lg: 'w-8 h-8',
 };
 
-export const Spinner: React.FC<SpinnerProps> = ({
+export function Spinner({
   size = 'md',
   label = 'Memuat...',
   className,
   ...props
-}) => {
+}: SpinnerProps): React.JSX.Element {
   return (
     <span className="inline-flex items-center" role="status" aria-label={label}>
       <svg
@@ -44,4 +44,4 @@ export const Spinner: React.FC<SpinnerProps> = ({
       <span className="sr-only">{label}</span>
     </span>
   );
-};
+}

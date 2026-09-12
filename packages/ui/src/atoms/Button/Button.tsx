@@ -25,41 +25,33 @@ const sizeClasses = {
   lg: 'h-12 px-6 text-base rounded-lg gap-2.5',
 };
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      children,
-      className,
-      variant = 'primary',
-      size = 'md',
-      isLoading = false,
-      disabled,
-      type = 'button',
-      ...props
-    },
-    ref,
-  ) => {
-    return (
-      <button
-        ref={ref}
-        type={type}
-        disabled={disabled || isLoading}
-        aria-busy={isLoading}
-        className={cn(
-          'inline-flex items-center justify-center font-medium transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
-          'disabled:cursor-not-allowed disabled:pointer-events-none select-none',
-          variantClasses[variant],
-          sizeClasses[size],
-          className,
-        )}
-        {...props}
-      >
-        {isLoading && <Spinner size={size === 'lg' ? 'md' : 'sm'} />}
-        {children}
-      </button>
-    );
-  },
-);
-
-Button.displayName = 'Button';
+export function Button({
+  children,
+  className,
+  variant = 'primary',
+  size = 'md',
+  isLoading = false,
+  disabled,
+  type = 'button',
+  ...props
+}: ButtonProps): React.JSX.Element {
+  return (
+    <button
+      type={type}
+      disabled={disabled || isLoading}
+      aria-busy={isLoading}
+      className={cn(
+        'inline-flex items-center justify-center font-medium transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+        'disabled:cursor-not-allowed disabled:pointer-events-none select-none',
+        variantClasses[variant],
+        sizeClasses[size],
+        className,
+      )}
+      {...props}
+    >
+      {isLoading && <Spinner size={size === 'lg' ? 'md' : 'sm'} />}
+      {children}
+    </button>
+  );
+}
