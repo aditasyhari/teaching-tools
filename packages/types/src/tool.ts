@@ -26,4 +26,7 @@ export interface ToolMetadata {
   isInteractive: boolean;
   requiresAuth: boolean;
   priority: 'P0' | 'P1' | 'P2';
+  route: string;
+  iconName: string;
+  status: 'AVAILABLE' | 'COMING_SOON';
 }

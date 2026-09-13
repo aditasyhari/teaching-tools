@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@walikelas/config": "workspace:*",
-    "@walikelas/types": "workspace:*"
+    "@walikelas/types": "workspace:*",
+    "@walikelas/validation": "workspace:*"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",

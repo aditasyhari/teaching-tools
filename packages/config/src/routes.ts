@@ -7,9 +7,16 @@ export const API_ROUTES = {
     GOOGLE_CALLBACK: '/auth/google/callback',
     ME: '/auth/me',
     LOGOUT: '/auth/logout',
+    DEV_LOGIN: '/auth/dev-login',
+  },
+  USERS: {
+    PROFILE: '/users/profile',
   },
   CLASSROOMS: '/classrooms',
+  NOTES: '/notes',
   SESSIONS: '/sessions',
+  QUIZZES: '/quizzes',
+  POLLS: '/polls',
 } as const;
 
 export const WEB_ROUTES = {
@@ -18,4 +25,5 @@ export const WEB_ROUTES = {
   CONSOLE: '/console',
   PROJECTOR: (code: string) => `/projector/${code}`,
   JOIN: (code?: string) => (code ? `/join/${code}` : '/join'),
+  POLLS: '/teacher/polls',
 } as const;

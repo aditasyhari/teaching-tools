@@ -6,6 +6,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 const variantClasses = {
@@ -31,6 +33,8 @@ export function Button({
   variant = 'primary',
   size = 'md',
   isLoading = false,
+  leftIcon,
+  rightIcon,
   disabled,
   type = 'button',
   ...props
@@ -50,8 +54,13 @@ export function Button({
       )}
       {...props}
     >
-      {isLoading && <Spinner size={size === 'lg' ? 'md' : 'sm'} />}
+      {isLoading ? (
+        <Spinner size={size === 'lg' ? 'md' : 'sm'} />
+      ) : (
+        leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>
+      )}
       {children}
+      {!isLoading && rightIcon && <span className="inline-flex shrink-0">{rightIcon}</span>}
     </button>
   );
 }

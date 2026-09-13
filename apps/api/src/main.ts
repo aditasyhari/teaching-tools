@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { DEFAULT_API_PORT, API_PREFIX } from '@walikelas/config';
@@ -8,6 +9,9 @@ import { DEFAULT_API_PORT, API_PREFIX } from '@walikelas/config';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+
+  // Cookie Parser for application sessions
+  app.use(cookieParser(process.env.SESSION_SECRET || 'wk-dev-secret'));
 
   // Security Headers
   app.use(helmet());

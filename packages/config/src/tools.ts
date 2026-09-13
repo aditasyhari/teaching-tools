@@ -1,7 +1,7 @@
 import type { ToolMetadata } from '@walikelas/types';
 
 export const TOOLS: ToolMetadata[] = [
-  // P0 Local Tools
+  // P0 Local Tools (Phase 4: Available)
   {
     id: 'timer',
     name: 'Timer',
@@ -10,6 +10,9 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: false,
     requiresAuth: false,
     priority: 'P0',
+    route: '/tools/timer',
+    iconName: 'timer',
+    status: 'AVAILABLE',
   },
   {
     id: 'random-picker',
@@ -19,6 +22,9 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: false,
     requiresAuth: false,
     priority: 'P0',
+    route: '/tools/random-picker',
+    iconName: 'random-picker',
+    status: 'AVAILABLE',
   },
   {
     id: 'group-maker',
@@ -28,6 +34,9 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: false,
     requiresAuth: false,
     priority: 'P0',
+    route: '/tools/group-maker',
+    iconName: 'group-maker',
+    status: 'AVAILABLE',
   },
   {
     id: 'scoreboard',
@@ -37,6 +46,9 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: false,
     requiresAuth: false,
     priority: 'P1',
+    route: '/tools/scoreboard',
+    iconName: 'scoreboard',
+    status: 'AVAILABLE',
   },
   {
     id: 'teacher-notes',
@@ -44,11 +56,14 @@ export const TOOLS: ToolMetadata[] = [
     description: 'Catatan cepat guru selama sesi pembelajaran berlangsung.',
     category: 'LOCAL',
     isInteractive: false,
-    requiresAuth: false,
+    requiresAuth: true,
     priority: 'P0',
+    route: '/tools/notes',
+    iconName: 'teacher-notes',
+    status: 'AVAILABLE',
   },
 
-  // P0 Interactive Tools
+  // Interactive Tools (Upcoming)
   {
     id: 'live-quiz',
     name: 'Live Quiz',
@@ -57,6 +72,9 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: true,
     requiresAuth: true,
     priority: 'P0',
+    route: '/tools/live-quiz',
+    iconName: 'live-quiz',
+    status: 'AVAILABLE',
   },
   {
     id: 'live-poll',
@@ -66,9 +84,10 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: true,
     requiresAuth: true,
     priority: 'P0',
+    route: '/tools/live-poll',
+    iconName: 'live-poll',
+    status: 'AVAILABLE',
   },
-
-  // P1 Interactive Tools
   {
     id: 'raise-hand',
     name: 'Raise Hand',
@@ -77,6 +96,9 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: true,
     requiresAuth: true,
     priority: 'P1',
+    route: '/tools/raise-hand',
+    iconName: 'raise-hand',
+    status: 'AVAILABLE',
   },
   {
     id: 'question-box',
@@ -86,6 +108,9 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: true,
     requiresAuth: true,
     priority: 'P1',
+    route: '/tools/question-box',
+    iconName: 'question-box',
+    status: 'AVAILABLE',
   },
   {
     id: 'brainstorm-board',
@@ -95,6 +120,9 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: true,
     requiresAuth: true,
     priority: 'P1',
+    route: '/tools/brainstorm-board',
+    iconName: 'brainstorm-board',
+    status: 'AVAILABLE',
   },
   {
     id: 'word-cloud',
@@ -104,6 +132,9 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: true,
     requiresAuth: true,
     priority: 'P1',
+    route: '/tools/word-cloud',
+    iconName: 'word-cloud',
+    status: 'COMING_SOON',
   },
   {
     id: 'exit-ticket',
@@ -113,9 +144,12 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: true,
     requiresAuth: true,
     priority: 'P1',
+    route: '/tools/exit-ticket',
+    iconName: 'exit-ticket',
+    status: 'AVAILABLE',
   },
 
-  // P2 Content Tool
+  // Content Tool (Upcoming)
   {
     id: 'flashcards',
     name: 'Flashcards',
@@ -124,5 +158,8 @@ export const TOOLS: ToolMetadata[] = [
     isInteractive: false,
     requiresAuth: false,
     priority: 'P2',
+    route: '/tools/flashcards',
+    iconName: 'flashcards',
+    status: 'COMING_SOON',
   },
 ];

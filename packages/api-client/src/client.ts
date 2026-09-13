@@ -4,6 +4,7 @@ import { ApiError } from './error.js';
 export interface ApiClientOptions {
   baseUrl: string;
   getHeaders?: () => Record<string, string> | Promise<Record<string, string>>;
+  credentials?: RequestCredentials;
 }
 
 export interface RequestOptions extends RequestInit {
@@ -13,10 +14,12 @@ export interface RequestOptions extends RequestInit {
 export class ApiClient {
   private readonly baseUrl: string;
   private readonly getHeaders?: () => Record<string, string> | Promise<Record<string, string>>;
+  private readonly credentials?: RequestCredentials;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '');
     this.getHeaders = options.getHeaders;
+    this.credentials = options.credentials ?? 'include';
   }
 
   private buildUrl(
@@ -55,6 +58,7 @@ export class ApiClient {
     };
 
     const response = await fetch(url, {
+      credentials: fetchOptions.credentials || this.credentials,
       ...fetchOptions,
       headers: mergedHeaders,
     });
@@ -109,6 +113,14 @@ export class ApiClient {
     return this.request<T>(path, {
       ...options,
       method: 'PUT',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  patch<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return this.request<T>(path, {
+      ...options,
+      method: 'PATCH',
       body: body ? JSON.stringify(body) : undefined,
     });
   }

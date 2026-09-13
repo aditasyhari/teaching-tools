@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { JOIN_CODE_LENGTH, MAX_PARTICIPANT_NAME_LENGTH } from '@walikelas/config';
 
-// Join code regex: alphanumeric uppercase, exactly JOIN_CODE_LENGTH characters
+// Join code: uppercase alphanumeric, exactly JOIN_CODE_LENGTH characters
 export const joinCodeSchema = z
   .string()
   .trim()
@@ -23,6 +23,7 @@ export const joinSessionSchema = z.object({
       MAX_PARTICIPANT_NAME_LENGTH,
       `Nama tampilan maksimal ${MAX_PARTICIPANT_NAME_LENGTH} karakter`,
     ),
+  participantId: z.string().optional(),
 });
 
 export type JoinSessionInput = z.infer<typeof joinSessionSchema>;
@@ -33,7 +34,20 @@ export const createSessionSchema = z.object({
     .trim()
     .min(1, 'Judul sesi tidak boleh kosong')
     .max(100, 'Judul sesi maksimal 100 karakter'),
-  activityId: z.string().optional(),
+  classroomId: z.string().optional().nullable(),
 });
 
 export type CreateSessionInput = z.infer<typeof createSessionSchema>;
+
+export const sessionActionSchema = z.object({
+  sessionId: z.string().min(1, 'ID sesi wajib diisi'),
+});
+
+export type SessionActionInput = z.infer<typeof sessionActionSchema>;
+
+export const sessionHeartbeatSchema = z.object({
+  sessionId: z.string().min(1, 'ID sesi wajib diisi'),
+  participantId: z.string().optional(),
+});
+
+export type SessionHeartbeatInput = z.infer<typeof sessionHeartbeatSchema>;
