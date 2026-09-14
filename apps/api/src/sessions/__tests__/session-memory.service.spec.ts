@@ -44,8 +44,8 @@ describe('SessionMemoryService', () => {
     expect(initial.isOnline).toBe(false);
     expect(service.getOnlineParticipantCount('sess-1')).toBe(0);
 
-    // Reconnect with same participantId
-    const reconnected = service.addParticipant('sess-1', 'Siti Rahma', initialId, 'socket-2');
+    // Reconnect with same participantId and valid reconnectToken
+    const reconnected = service.addParticipant('sess-1', 'Siti Rahma', initialId, 'socket-2', initial.reconnectToken);
     expect(reconnected.id).toBe(initialId);
     expect(reconnected.isOnline).toBe(true);
     expect(service.getOnlineParticipantCount('sess-1')).toBe(1);
@@ -95,5 +95,36 @@ describe('SessionMemoryService', () => {
     expect(service.getOnlineParticipantCount('sess-1')).toBe(0);
     expect(service.getSocketEntry('teacher-sock')).toBeUndefined();
     expect(service.getSocketEntry('sock-1')).toBeUndefined();
+  });
+
+  it('SEC-002: should generate a reconnectToken and enforce token matching on reconnect', () => {
+    // 1. Initial join generates a reconnectToken
+    const initial = service.addParticipant('sess-1', 'Budi Santoso', undefined, 'sock-1');
+    expect(initial.reconnectToken).toBeDefined();
+    expect(initial.reconnectToken).toMatch(/^rt_/);
+    const validToken = initial.reconnectToken;
+    const initialId = initial.id;
+
+    // Simulate disconnect
+    service.handleDisconnect('sock-1');
+
+    // 2. Reconnection with valid token succeeds
+    const reconnected = service.addParticipant('sess-1', 'Budi Santoso', initialId, 'sock-2', validToken);
+    expect(reconnected.id).toBe(initialId);
+    expect(reconnected.isOnline).toBe(true);
+
+    // Simulate disconnect again
+    service.handleDisconnect('sock-2');
+
+    // 3. Attacker tries to hijack Budi's ID with wrong/missing token
+    const hijacked = service.addParticipant('sess-1', 'Attacker Impersonator', initialId, 'sock-evil', 'rt_wrong_token');
+    // Must NOT re-bind Budi's ID
+    expect(hijacked.id).not.toBe(initialId);
+    expect(hijacked.displayName).toBe('Attacker Impersonator');
+    // Budi's original record remains intact and offline until Budi returns
+    const originalBudi = service.getParticipant('sess-1', initialId);
+    expect(originalBudi?.id).toBe(initialId);
+    expect(originalBudi?.displayName).toBe('Budi Santoso');
+    expect(originalBudi?.isOnline).toBe(false);
   });
 });

@@ -527,6 +527,27 @@ describe('SessionsGateway', () => {
       });
     });
 
+    it('SEC-001: rejects quiz:answer with FORBIDDEN when sessionId does not match socket session', async () => {
+      mockMemory.getSocketEntry.mockReturnValue({
+        socketId: 'socket-client-1',
+        sessionId: 'sess-123',
+        participantId: 'p-1',
+        role: 'PARTICIPANT',
+      });
+
+      await gateway.handleQuizAnswer(mockSocket as any, {
+        sessionId: 'other-session-456',
+        questionId: 'q-1',
+        optionId: 'opt-1',
+      });
+
+      expect(mockQuizRuntime.recordAnswer).not.toHaveBeenCalled();
+      expect(mockSocket.emit).toHaveBeenCalledWith('quiz:error', {
+        code: 'FORBIDDEN',
+        message: 'Sesi tidak sesuai dengan koneksi aktif',
+      });
+    });
+
     it('handles quiz:end-question from teacher and reveals correct answer', async () => {
       mockQuizRuntime.endQuestion.mockReturnValue({
         correctOptionId: 'opt-1',

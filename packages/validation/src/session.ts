@@ -24,6 +24,7 @@ export const joinSessionSchema = z.object({
       `Nama tampilan maksimal ${MAX_PARTICIPANT_NAME_LENGTH} karakter`,
     ),
   participantId: z.string().optional(),
+  reconnectToken: z.string().optional(),
 });
 
 export type JoinSessionInput = z.infer<typeof joinSessionSchema>;

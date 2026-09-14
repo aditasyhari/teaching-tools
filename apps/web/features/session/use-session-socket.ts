@@ -51,13 +51,18 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const participantIdRef = useRef<string | null>(null);
+  const reconnectTokenRef = useRef<string | null>(null);
 
-  // Initialize participant ID from sessionStorage for participants
+  // Initialize participant ID and reconnect token from sessionStorage for participants
   useEffect(() => {
     if (!isTeacher && typeof window !== 'undefined') {
       const stored = sessionStorage.getItem('wk_participant_id');
       if (stored) {
         participantIdRef.current = stored;
+      }
+      const storedToken = sessionStorage.getItem('wk_reconnect_token');
+      if (storedToken) {
+        reconnectTokenRef.current = storedToken;
       }
     }
   }, [isTeacher]);
@@ -79,6 +84,7 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
         joinCode: joinCode.trim().toUpperCase(),
         displayName: displayName.trim(),
         participantId: participantIdRef.current || undefined,
+        reconnectToken: reconnectTokenRef.current || undefined,
       });
     }
   }, [isTeacher, sessionId, joinCode, displayName]);
@@ -127,11 +133,15 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
     socket.on('session:state', (data: SessionSnapshot | ParticipantSessionSnapshot) => {
       setSnapshot(data);
 
-      // Store participantId in sessionStorage for reconnect
+      // Store participantId and reconnectToken in sessionStorage for reconnect
       if (!isTeacher && 'currentParticipant' in data) {
         participantIdRef.current = data.currentParticipant.id;
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('wk_participant_id', data.currentParticipant.id);
+          if (data.currentParticipant.reconnectToken) {
+            reconnectTokenRef.current = data.currentParticipant.reconnectToken;
+            sessionStorage.setItem('wk_reconnect_token', data.currentParticipant.reconnectToken);
+          }
         }
       }
     });

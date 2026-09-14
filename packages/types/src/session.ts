@@ -24,6 +24,7 @@ export interface SessionParticipant {
   joinedAt: string;
   lastSeenAt: string;
   isOnline: boolean;
+  reconnectToken?: string;
 }
 
 export interface SessionSnapshot {
@@ -54,6 +55,7 @@ export interface ParticipantSessionSnapshot {
   currentParticipant: {
     id: string;
     displayName: string;
+    reconnectToken?: string;
   };
   serverTime: string;
 }
@@ -63,6 +65,7 @@ export interface SessionJoinPayload {
   joinCode: string;
   displayName?: string;
   participantId?: string;
+  reconnectToken?: string;
 }
 
 export interface SessionLeavePayload {

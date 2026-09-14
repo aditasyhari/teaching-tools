@@ -37,9 +37,53 @@ interface ParticipantJoinViewProps {
 export function ParticipantJoinView({
   initialCode = '',
 }: ParticipantJoinViewProps): React.JSX.Element {
-  const [code, setCode] = useState(initialCode.toUpperCase());
-  const [displayName, setDisplayName] = useState('');
-  const [joined, setJoined] = useState(false);
+  // Restore session from sessionStorage to survive page refresh / app switch
+  const [code, setCode] = useState(() => {
+    if (initialCode) return initialCode.toUpperCase();
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('wk_participant_session');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          return (parsed.code || '').toUpperCase();
+        }
+      } catch {}
+    }
+    return '';
+  });
+
+  const [displayName, setDisplayName] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('wk_participant_session');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (!initialCode || initialCode.toUpperCase() === (parsed.code || '').toUpperCase()) {
+            return parsed.displayName || '';
+          }
+        }
+      } catch {}
+    }
+    return '';
+  });
+
+  const [joined, setJoined] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('wk_participant_session');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.code && parsed.displayName) {
+            if (!initialCode || initialCode.toUpperCase() === (parsed.code || '').toUpperCase()) {
+              return true;
+            }
+          }
+        }
+      } catch {}
+    }
+    return false;
+  });
+
   const [formError, setFormError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [viewMode, setViewMode] = useState<
@@ -78,6 +122,12 @@ export function ParticipantJoinView({
     try {
       // First verify code via REST API
       await verifyJoinCode(apiClient, code);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(
+          'wk_participant_session',
+          JSON.stringify({ code: code.trim().toUpperCase(), displayName: displayName.trim() }),
+        );
+      }
       setJoined(true);
     } catch (err: any) {
       setFormError(err.message || 'Kode sesi tidak valid atau sesi telah berakhir.');
@@ -98,6 +148,13 @@ export function ParticipantJoinView({
     isTeacher: false,
     joinCode: joined ? code : undefined,
     displayName: joined ? displayName : undefined,
+    onSessionEnded: () => {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('wk_participant_session');
+        sessionStorage.removeItem('wk_participant_id');
+        sessionStorage.removeItem('wk_reconnect_token');
+      }
+    },
   });
 
   const snapshot = liveSnapshot as ParticipantSessionSnapshot | null;
@@ -236,6 +293,11 @@ export function ParticipantJoinView({
 
   const handleLeave = () => {
     leaveSession();
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('wk_participant_session');
+      sessionStorage.removeItem('wk_participant_id');
+      sessionStorage.removeItem('wk_reconnect_token');
+    }
     setJoined(false);
   };
 

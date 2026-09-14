@@ -58,6 +58,7 @@ export class SessionMemoryService implements OnModuleDestroy {
     displayName: string,
     existingParticipantId?: string,
     socketId?: string,
+    reconnectToken?: string,
   ): SessionParticipant {
     let sessionMap = this.sessions.get(sessionId);
     if (!sessionMap) {
@@ -67,27 +68,38 @@ export class SessionMemoryService implements OnModuleDestroy {
 
     const now = new Date().toISOString();
 
-    // Reconnect existing participant if ID matches
+    // Reconnect existing participant if ID matches AND reconnectToken matches
     if (existingParticipantId && sessionMap.has(existingParticipantId)) {
       const existing = sessionMap.get(existingParticipantId)!;
-      existing.isOnline = true;
-      existing.lastSeenAt = now;
-      if (socketId) {
-        this.sockets.set(socketId, {
-          socketId,
-          sessionId,
-          participantId: existing.id,
-          role: 'PARTICIPANT',
-        });
+      // SEC-002: Reconnect token validation to prevent identity hijacking
+      if (!existing.reconnectToken || existing.reconnectToken === reconnectToken) {
+        existing.isOnline = true;
+        existing.lastSeenAt = now;
+        if (!existing.reconnectToken) {
+          existing.reconnectToken = `rt_${randomUUID().replace(/-/g, '')}`;
+        }
+        if (socketId) {
+          this.sockets.set(socketId, {
+            socketId,
+            sessionId,
+            participantId: existing.id,
+            role: 'PARTICIPANT',
+          });
+        }
+        this.logger.log(
+          `Participant reconnected: [${existing.displayName}] (ID: ${existing.id}) in session ${sessionId}`,
+        );
+        return existing;
       }
-      this.logger.log(
-        `Participant reconnected: [${existing.displayName}] (ID: ${existing.id}) in session ${sessionId}`,
+
+      this.logger.warn(
+        `Participant identity hijacking rejected for ID ${existingParticipantId} in session ${sessionId}. Creating new participant.`,
       );
-      return existing;
     }
 
     // New participant
     const id = `p_${randomUUID()}`;
+    const token = `rt_${randomUUID().replace(/-/g, '')}`;
     const participant: SessionParticipant = {
       id,
       sessionId,
@@ -95,6 +107,7 @@ export class SessionMemoryService implements OnModuleDestroy {
       joinedAt: now,
       lastSeenAt: now,
       isOnline: true,
+      reconnectToken: token,
     };
 
     sessionMap.set(id, participant);

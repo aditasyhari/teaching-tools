@@ -292,6 +292,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
         code: payload.joinCode,
         displayName: payload.displayName,
         participantId: payload.participantId,
+        reconnectToken: payload.reconnectToken,
       });
 
       if (!validation.success) {
@@ -302,7 +303,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
         return;
       }
 
-      const { code, displayName, participantId } = validation.data;
+      const { code, displayName, participantId, reconnectToken } = validation.data;
 
       const sessionPreview = await this.sessionsService.verifyJoinCode(code);
 
@@ -311,6 +312,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
         displayName,
         participantId,
         client.id,
+        reconnectToken,
       );
 
       client.join(`session:${sessionPreview.id}`);
@@ -649,6 +651,14 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     const { sessionId, questionId, optionId } = validation.data;
+    if (entry.sessionId !== sessionId) {
+      client.emit('quiz:error', {
+        code: 'FORBIDDEN',
+        message: 'Sesi tidak sesuai dengan koneksi aktif',
+      });
+      return;
+    }
+
     const result = this.quizRuntime.recordAnswer(
       sessionId,
       entry.participantId,
@@ -926,6 +936,14 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     const { sessionId, pollId, optionId, optionIds } = validation.data;
+    if (entry.sessionId !== sessionId) {
+      client.emit('poll:error', {
+        code: 'FORBIDDEN',
+        message: 'Sesi tidak sesuai dengan koneksi aktif',
+      });
+      return;
+    }
+
     const result = this.pollRuntime.recordResponse(
       sessionId,
       entry.participantId,
@@ -1031,6 +1049,14 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     const { sessionId, content, isAnonymous } = validation.data;
+    if (entry.sessionId !== sessionId) {
+      client.emit('question:error', {
+        code: 'FORBIDDEN',
+        message: 'Sesi tidak sesuai dengan koneksi aktif',
+      });
+      return;
+    }
+
     const participant = this.memory.getParticipant(sessionId, entry.participantId);
     const authorName = participant?.displayName || 'Peserta';
 
@@ -1319,6 +1345,14 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     const { sessionId } = validation.data;
+    if (entry.sessionId !== sessionId) {
+      client.emit('hand:error', {
+        code: 'FORBIDDEN',
+        message: 'Sesi tidak sesuai dengan koneksi aktif',
+      });
+      return;
+    }
+
     const participant = this.memory.getParticipant(sessionId, entry.participantId);
     const displayName = participant?.displayName || 'Peserta';
 
@@ -1380,6 +1414,14 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     const { sessionId } = validation.data;
+    if (entry.sessionId !== sessionId) {
+      client.emit('hand:error', {
+        code: 'FORBIDDEN',
+        message: 'Sesi tidak sesuai dengan koneksi aktif',
+      });
+      return;
+    }
+
     const result = this.raiseHandRuntime.lowerHand(sessionId, entry.participantId);
     if (!result.accepted || !result.hand) {
       client.emit('hand:error', {
@@ -1889,6 +1931,14 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     const { sessionId, content } = validation.data;
+    if (entry.sessionId !== sessionId) {
+      client.emit('brainstorm:error', {
+        code: 'FORBIDDEN',
+        message: 'Sesi tidak sesuai dengan koneksi aktif',
+      });
+      return;
+    }
+
     const participant = this.memory.getParticipant(sessionId, entry.participantId);
     const authorName = participant?.displayName || 'Peserta';
 
@@ -2267,6 +2317,14 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     const { sessionId, answers } = validation.data;
+    if (entry.sessionId !== sessionId) {
+      client.emit('exit-ticket:error', {
+        code: 'FORBIDDEN',
+        message: 'Sesi tidak sesuai dengan koneksi aktif',
+      });
+      return;
+    }
+
     const participant = this.memory.getParticipant(sessionId, entry.participantId);
     const authorName = participant?.displayName || 'Peserta';
 

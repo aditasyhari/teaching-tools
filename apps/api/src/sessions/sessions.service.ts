@@ -413,6 +413,7 @@ export class SessionsService {
       currentParticipant: {
         id: participantId,
         displayName,
+        reconnectToken: participant?.reconnectToken,
       },
       serverTime: new Date().toISOString(),
     };

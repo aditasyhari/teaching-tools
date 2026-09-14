@@ -13,6 +13,7 @@ import {
   WifiOff,
   AlertCircle,
   HelpCircle,
+  Tv,
 } from 'lucide-react';
 import { Button, Badge, PageHeaderSection, EmptyState } from '@walikelas/ui';
 import type { SessionSnapshot } from '@walikelas/types';
@@ -375,6 +376,19 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
                   >
                     {copiedLink ? 'Link Tersalin!' : 'Salin Link Gabung'}
                   </Button>
+                  <a
+                    href={`/projector/${session.joinCode}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      leftIcon={<Tv className="w-4 h-4 text-indigo-300" />}
+                    >
+                      Buka Layar Proyektor
+                    </Button>
+                  </a>
                 </div>
               </div>
               <p className="text-xs text-indigo-300">
