@@ -94,8 +94,10 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
     if (!isTeacher && (!joinCode || !displayName)) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4006';
+    const baseUrl = apiUrl.replace(/\/+$/, '');
+    const socketUrl = baseUrl.endsWith('/sessions') ? baseUrl : `${baseUrl}/sessions`;
 
-    const socket: Socket = io(`${apiUrl}/sessions`, {
+    const socket: Socket = io(socketUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,

@@ -305,21 +305,21 @@ export function ParticipantJoinView({
   if (!joined) {
     return (
       <div className="min-h-[80vh] flex flex-col justify-center items-center px-4 py-8">
-        <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="w-full max-w-md bg-white border border-[#e8e4dc] rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-stone-950 flex items-center justify-center mx-auto shadow-xs ring-4 ring-amber-100">
               <Sparkles className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <h1 className="text-2xl font-black text-stone-900 tracking-tight">
               Gabung Sesi Kelas
             </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-stone-600">
               Masukkan kode sesi yang diberikan guru dan nama Anda untuk memulai.
             </p>
           </div>
 
           {(formError || socketError) && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 dark:bg-rose-950/30 dark:border-rose-900/50 dark:text-rose-400 text-xs font-medium flex items-center gap-2">
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-medium flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{formError || socketError}</span>
             </div>
@@ -327,14 +327,18 @@ export function ParticipantJoinView({
 
           <form onSubmit={handleJoinSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+              <label
+                htmlFor="join-session-code"
+                className="text-xs font-bold uppercase tracking-wider text-stone-600"
+              >
                 Kode Sesi (6 Karakter)
               </label>
               <Input
+                id="join-session-code"
                 value={code}
                 onChange={handleCodeChange}
                 placeholder="CONTOH: AB7K42"
-                className="text-center font-mono font-bold text-lg tracking-widest uppercase py-3"
+                className="text-center font-mono font-bold text-lg tracking-widest uppercase py-3 border-[#e8e4dc] focus:border-amber-500"
                 autoFocus={!initialCode}
                 maxLength={6}
                 required
@@ -342,14 +346,18 @@ export function ParticipantJoinView({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+              <label
+                htmlFor="participant-display-name"
+                className="text-xs font-bold uppercase tracking-wider text-stone-600"
+              >
                 Nama Anda
               </label>
               <Input
+                id="participant-display-name"
                 value={displayName}
                 onChange={handleDisplayNameChange}
                 placeholder="Nama panggilan atau lengkap"
-                className="py-2.5 text-base"
+                className="py-2.5 text-base border-[#e8e4dc] focus:border-amber-500"
                 autoFocus={Boolean(initialCode)}
                 maxLength={30}
                 required
@@ -368,10 +376,10 @@ export function ParticipantJoinView({
             </Button>
           </form>
 
-          <div className="text-center pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="text-center pt-2 border-t border-[#e8e4dc]">
             <Link
               href="/"
-              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+              className="text-xs text-stone-600 hover:text-stone-900 hover:underline font-semibold"
             >
               Kembali ke Beranda WaliKelas
             </Link>

@@ -617,15 +617,15 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
       )}
 
       {/* Participant Roster Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+      <div className="bg-white border border-[#e8e4dc] rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-[#e8e4dc] pb-4">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Daftar Peserta</h2>
+            <Users className="w-5 h-5 text-amber-600" />
+            <h2 className="text-lg font-bold text-stone-900">Daftar Peserta</h2>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 dark:text-slate-400">Aktif Online:</span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400">
+            <span className="text-xs text-stone-500">Aktif Online:</span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200/60">
               {onlineCount} Peserta
             </span>
           </div>
@@ -633,13 +633,13 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
 
         {participants.length === 0 ? (
           <div className="py-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-400">
+            <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-3 text-stone-400 border border-[#e8e4dc]">
               <Users className="w-6 h-6" />
             </div>
-            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            <h4 className="text-sm font-bold text-stone-800">
               Menunggu Peserta Bergabung
             </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+            <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
               Murid yang membuka tautan atau memasukkan kode sesi akan muncul di sini secara
               otomatis.
             </p>
@@ -651,24 +651,24 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
                 key={p.id}
                 className={`p-3 rounded-xl border transition-all flex flex-col items-center text-center ${
                   p.isOnline
-                    ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200/60 dark:border-indigo-800/40 text-slate-900 dark:text-slate-100'
-                    : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-400 opacity-60'
+                    ? 'bg-stone-50/80 border-[#e8e4dc] text-stone-900 hover:border-amber-300'
+                    : 'bg-stone-50/40 border-stone-200 text-stone-400 opacity-60'
                 }`}
               >
                 <div className="relative mb-2">
-                  <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                  <div className="w-10 h-10 rounded-full bg-amber-500 text-stone-950 font-bold text-sm flex items-center justify-center shadow-xs">
                     {p.displayName.charAt(0).toUpperCase()}
                   </div>
                   <span
-                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${
-                      p.isOnline ? 'bg-emerald-500' : 'bg-slate-400'
+                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                      p.isOnline ? 'bg-emerald-500' : 'bg-stone-400'
                     }`}
                   />
                 </div>
-                <span className="text-xs font-semibold truncate w-full" title={p.displayName}>
+                <span className="text-xs font-semibold truncate w-full text-stone-800" title={p.displayName}>
                   {p.displayName}
                 </span>
-                <span className="text-[10px] text-slate-400 mt-0.5">
+                <span className="text-[10px] text-stone-400 mt-0.5">
                   {p.isOnline ? 'Online' : 'Terputus'}
                 </span>
               </div>

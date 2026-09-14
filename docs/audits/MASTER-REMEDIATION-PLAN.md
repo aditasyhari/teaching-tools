@@ -91,26 +91,38 @@ P3 (Low / Technical Debt / Deferred):10
 - **Impact**: Teachers cannot use projector displays without sharing their private console.
 
 ### `SEC-003`: Unthrottled Join-Code Verification
+- **Severity**: P1
+- **Status**: VERIFIED
 - **Evidence**: `apps/api/src/sessions/sessions.controller.ts` (lines 29–42) exposes `POST /api/v1/sessions/verify-code` with no `@Throttle()` or rate-limiting guards.
 - **Impact**: Automated enumeration of 6-character session codes.
 
 ### `REAL-001`: $O(N^2)$ Broadcast Storm on Quiz / Poll Bursts
+- **Severity**: P1
+- **Status**: VERIFIED
 - **Evidence**: `sessions.gateway.ts` (lines 677–687) emits two room-wide broadcasts (`quiz:stats-update` and `quiz:distribution-update`) per individual student submission.
 - **Impact**: At 100 students, generates 20,000 packets in 2–3 seconds, causing 350–600ms event loop latency spikes.
 
 ### `SEC-004`: Dev-Login Administrative Impersonation Outside Production
+- **Severity**: P1
+- **Status**: VERIFIED
 - **Evidence**: `apps/api/src/auth/auth.service.ts` (lines 249–251) checks `if (process.env.NODE_ENV === 'production')`. In staging/preview environments, anyone can POST `{ role: 'ADMIN' }`.
 - **Impact**: Complete administrative takeover of non-production test deployments.
 
 ### `A11Y-001`: Join Form Inputs Lack Associated Labels
+- **Severity**: P1
+- **Status**: VERIFIED
 - **Evidence**: `apps/web/features/session/participant-join-view.tsx` (lines 268–294) renders `<label>` tags without `htmlFor` and `<Input>` without matching `id`.
 - **Impact**: Screen readers announce "Edit box, text" with no context (WCAG 1.3.1 violation).
 
 ### `A11Y-002`: Modal Overlays Lack Dialog Semantics and Focus Trapping
+- **Severity**: P1
+- **Status**: VERIFIED
 - **Evidence**: 8 modal dialogs across `features/` use raw `<div>` wrappers without `role="dialog"`, `aria-modal="true"`, or `Escape` key listeners.
 - **Impact**: Keyboard users cannot navigate modals predictably (WCAG 2.1.2 violation).
 
 ### `SEO-001`: Missing `apps/web/public/` Directory & Assets
+- **Severity**: P1
+- **Status**: VERIFIED
 - **Evidence**: Directory does not exist on disk. Requests to `/favicon.ico`, `/robots.txt`, and `/sitemap.xml` return Next.js 404 HTML pages.
 - **Impact**: Search crawlers fail; social link unfurling broken.
 
@@ -282,44 +294,60 @@ flowchart TD
 
 ## 11. P1 — High (Must Fix Before Beta)
 
-1. **`SEC-003` — Unthrottled Join-Code Verification**:
-   - *Fix*: Apply NestJS `ThrottlerGuard` (10 req/min per IP) to `POST /api/v1/sessions/verify-code`.
-2. **`REAL-001` — $O(N^2)$ Broadcast Storm on Quiz Bursts**:
-   - *Fix*: Add 500ms debounce to `quiz:stats-update` and restrict `quiz:distribution-update` strictly to `:teachers` room.
-3. **`SEC-004` — Dev-Login Role Elevation Outside Production**:
-   - *Fix*: Require `DEV_LOGIN_SECRET` header or restrict strictly to `process.env.NODE_ENV === 'development'`.
-4. **`A11Y-001` — Form Inputs Lack Associated Labels**:
-   - *Fix*: Add `id="join-code"` and `htmlFor="join-code"`, plus `id="display-name"` and `htmlFor="display-name"`.
-5. **`A11Y-002` — Modals Lack Dialog Semantics and Focus Trapping**:
-   - *Fix*: Add WAI-ARIA `role="dialog"`, `aria-modal="true"`, focus containment, and `Escape` key listeners.
-6. **`SEO-001` — Missing `apps/web/public/` Directory & Assets**:
-   - *Fix*: Create directory with `favicon.ico`, `robots.txt`, and Next.js `sitemap.ts`.
+1. **`SEC-003` — Unthrottled Join-Code Verification** — **Status: VERIFIED**:
+   - *Fix*: Apply lightweight sliding-window rate limit guard (15 req/min per IP) returning HTTP 429 on `POST /api/v1/sessions/verify-code`.
+2. **`REAL-001` — $O(N^2)$ Broadcast Storm on Quiz Bursts** — **Status: VERIFIED**:
+   - *Fix*: Add 500ms trailing debounce to room-wide `quiz:stats-update` with flush on question end/finish, and restrict `quiz:distribution-update` strictly to `:teachers` room.
+3. **`SEC-004` — Dev-Login Role Elevation Outside Production** — **Status: VERIFIED**:
+   - *Fix*: Restrict `devLogin` strictly to `NODE_ENV === 'development'` or `'test'`, and block `ADMIN` role unless `ALLOW_DEV_ADMIN === 'true'`.
+4. **`A11Y-001` — Form Inputs Lack Associated Labels** — **Status: VERIFIED**:
+   - *Fix*: Add explicit `id` and `htmlFor` attributes to join inputs and projector session inputs.
+5. **`A11Y-002` — Modals Lack Dialog Semantics and Focus Trapping** — **Status: VERIFIED**:
+   - *Fix*: Add WAI-ARIA `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, and `Escape` key listeners across all active feature panels.
+6. **`SEO-001` — Missing `apps/web/public/` Directory & Assets** — **Status: VERIFIED**:
+   - *Fix*: Create `apps/web/public/` directory with `favicon.ico`, `robots.txt`, and Next.js `robots.ts` / `sitemap.ts`.
 
 ---
 
 ## 12. P2 — Medium (Should Fix Before Production)
 
-1. **`PERF-001`**: Code-split interactive tools in `ParticipantJoinView` via `next/dynamic`.
-2. **`OPS-001`**: Add `await this.prisma.$queryRaw'SELECT 1'` to `HealthController`.
-3. **`OPS-002`**: Create `ecosystem.config.js` (ports 3006 & 4006) and Nginx reverse proxy template.
-4. **`OPS-003`**: Create `scripts/backup-db.sh` for automated `pg_dump`.
-5. **`ARCH-001`**: Add pagination (`take: 50, skip: 0`) to teacher `findMany` queries.
-6. **`UI-001`**: Import `@walikelas/ui/tokens` and CSS variables (`--card`, `--border`) into `tailwind.config.ts`.
-7. **`UI-002`**: Extract `<Modal>` organism into `@walikelas/ui` and refactor feature panels.
-8. **`REAL-002`**: Track participant socket connections using a `Set<string>` to avoid premature offline status.
-9. **`SEC-006`**: Throw startup error in production if `SESSION_SECRET` is unset.
-10. **`UX-002`**: Restructure teacher hero banner into Primary Activities vs Utility Overlays.
+1. **`OPS-001` — Shallow Health Check** — **Status: RESOLVED**:
+   - *Fix*: Added PostgreSQL `$queryRaw` ping to `HealthController` with degraded fallback.
+2. **`SEC-006` — Insecure Cookie Secret Fallback** — **Status: RESOLVED**:
+   - *Fix*: Added production assertion in `main.ts` throwing error on startup if `SESSION_SECRET` is unset.
+3. **`UI-001` — Design Token Disconnection & Undeclared Classes** — **Status: RESOLVED**:
+   - *Fix*: Mapped `@walikelas/ui/tokens` colors and CSS variables (`--card`, `--border`, `--primary`, `--muted`) in `tailwind.config.ts` and `globals.css`.
+4. **`REAL-002` — Multi-Tab Disconnect Prematurely Flags Participant Offline** — **Status: RESOLVED**:
+   - *Fix*: Track active participant socket connections across tabs in `SessionMemoryService` and `SessionsGateway` before marking offline.
+5. **`OPS-002` — Missing PM2 Ecosystem & Nginx Templates** — **Status: RESOLVED**:
+   - *Fix*: Created production `ecosystem.config.js` (ports 3006 & 4006) and Nginx reverse proxy template `deploy/nginx/tools.walikelas.id.conf`.
+6. **`OPS-003` — Missing Database Backup Automation** — **Status: RESOLVED**:
+   - *Fix*: Created automated PostgreSQL backup script `scripts/backup-db.sh` with compression and retention management.
+7. **`PERF-001` — Monolithic 342 kB First Load JS on Join Route** — **Status: DEFERRED**:
+   - *Deferred*: Dynamic chunking over mobile 3G/4G risks runtime loading delays during active quiz starts. Retain static preloading for V1; optimize post-beta.
+8. **`ARCH-001` — Unbounded Database Collection Queries** — **Status: DEFERRED**:
+   - *Deferred*: Teacher collections in V1 are small (< 50 items). Full pagination envelope refactor alters monorepo API contracts; scheduled for post-beta.
+9. **`UI-002` — 8 Duplicated Modal Backdrop Implementations** — **Status: DEFERRED**:
+   - *Deferred*: All 7 active modals were hardened in R4 with full dialog ARIA and Escape key dismiss. Shared organism extraction deferred post-beta to avoid layout regression risk.
+10. **`UX-002` — Teacher Action Bar Clutter & Modal Hopping** — **Status: DEFERRED**:
+    - *Deferred*: Significant banner redesign deferred to post-beta usability polish to preserve verified session controls.
 
 ---
 
 ## 13. P3 — Low (Technical Debt / Deferred)
 
-1. **`CONF-001`**: Normalize socket API URL to prevent double slashes.
-2. **`ARCH-002`**: Decompose `SessionsGateway` into modular socket handlers.
-3. **`DATA-001`**: Add database persistence for Brainstorm and Exit Ticket templates.
-4. **`ADMIN-001`**: Implement backend `AdminModule` for platform analytics.
-5. **`MOB-001`**: Connect `apps/mobile` React Native app to API/Sockets.
-6. **`TOOL-001`**: Implement Word Cloud and Flashcards tools.
+1. **`CONF-001` — Socket URL Path Concatenation Fragility** — **Status: RESOLVED**:
+   - *Fix*: Normalized `apiUrl` trailing slashes in `use-session-socket.ts`.
+2. **`ARCH-002` — Monolithic `SessionsGateway` (2,543 lines)** — **Status: DEFERRED**:
+   - *Deferred*: Refactoring 41 working handlers before launch poses high regression risk. Deferred to post-beta architectural cleanup.
+3. **`DATA-001` — Brainstorm Board & Exit Ticket Ephemeral-Only State** — **Status: DEFERRED**:
+   - *Deferred*: Matches V1 live runtime specification. Persistent templates scheduled on future roadmap.
+4. **`ADMIN-001` — Disconnected Admin Console frontend** — **Status: DEFERRED**:
+   - *Deferred*: Platform administrative backend modules scheduled on post-launch roadmap.
+5. **`MOB-001` — Teacher Remote Android is a stub** — **Status: DEFERRED**:
+   - *Deferred*: Native mobile application client scheduled on post-launch roadmap.
+6. **`TOOL-001` — Word Cloud & Flashcards missing** — **Status: DEFERRED**:
+   - *Deferred*: Extended tool catalog scheduled on post-launch roadmap.
 
 ---
 
@@ -533,8 +561,10 @@ WaliKelas Teaching Tools V1 represents an exceptional software engineering effor
 - Zero SQL injection risks and robust Google OAuth CSRF protections.
 - Zero timer drift due to server-authoritative epoch calculations.
 
-By executing **Remediation Phases R2 through R6** in strict sequence, all critical security, realtime concurrency, and classroom continuity vulnerabilities will be resolved, promoting WaliKelas Teaching Tools V1 from **Beta Ready (Remediation Required)** to **Production Ready** for live classroom deployment across Indonesian schools.
+By executing **Remediation Phases R2 through R6** in strict sequence, all critical security, realtime concurrency, and classroom continuity vulnerabilities were resolved. 
+
+The full regression audit has been completed and verified in **`docs/audits/FINAL-REGRESSION-R7.md`** with verdict: **READY FOR BETA READINESS**.
 
 ---
-*Document approved by Principal Engineer & Product Technology Lead. Production code was not modified during this analysis and planning phase.*
+*Document approved by Principal Engineer & Product Technology Lead.*
 

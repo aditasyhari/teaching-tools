@@ -1,0 +1,12 @@
+# https://tools.walikelas.id/robots.txt
+User-agent: *
+Allow: /
+Allow: /tools/
+Allow: /join/
+Allow: /projector/
+Disallow: /teacher/
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://tools.walikelas.id/sitemap.xml
+

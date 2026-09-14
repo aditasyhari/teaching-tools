@@ -3,8 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #faf8f5;
+  --foreground: #1c1917;
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+  --border: #e8e4dc;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --muted: #f4eee2;
+  --muted-foreground: #78716c;
+}
+
+.dark {
+  --background: #0c1222;
+  --foreground: #faf8f5;
+  --card: #151d30;
+  --card-foreground: #faf8f5;
+  --border: #222e47;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --muted: #1a243b;
+  --muted-foreground: #94a3b8;
 }
 
 body {
@@ -14,3 +33,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

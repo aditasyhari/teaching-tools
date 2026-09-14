@@ -102,6 +102,41 @@ describe('AuthService', () => {
       expect(result.sessionToken).toHaveLength(64);
       expect(result.data.user.email).toBe('guru@sekolah.id');
     });
+
+    it('SEC-004: throws UnauthorizedException when NODE_ENV is production or staging', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      try {
+        process.env.NODE_ENV = 'staging';
+        await expect(
+          authService.devLogin({ role: 'TEACHER' }, { ipAddress: '127.0.0.1' }),
+        ).rejects.toThrow(UnauthorizedException);
+
+        process.env.NODE_ENV = 'production';
+        await expect(
+          authService.devLogin({ role: 'TEACHER' }, { ipAddress: '127.0.0.1' }),
+        ).rejects.toThrow(UnauthorizedException);
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+      }
+    });
+
+    it('SEC-004: blocks ADMIN role elevation in development when ALLOW_DEV_ADMIN is not set', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAllowAdmin = process.env.ALLOW_DEV_ADMIN;
+      try {
+        process.env.NODE_ENV = 'development';
+        delete process.env.ALLOW_DEV_ADMIN;
+
+        await expect(
+          authService.devLogin({ role: 'ADMIN' }, { ipAddress: '127.0.0.1' }),
+        ).rejects.toThrow(UnauthorizedException);
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        if (originalAllowAdmin !== undefined) {
+          process.env.ALLOW_DEV_ADMIN = originalAllowAdmin;
+        }
+      }
+    });
   });
 
   describe('revokeSession', () => {

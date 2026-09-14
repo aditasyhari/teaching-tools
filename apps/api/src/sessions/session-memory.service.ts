@@ -228,9 +228,13 @@ export class SessionMemoryService implements OnModuleDestroy {
       return { sessionId: entry.sessionId, role: 'TEACHER' };
     }
 
-    // Participant disconnect: mark offline (do not delete immediately to permit reconnect)
+    // Participant disconnect: check if participant has other active sockets (e.g. multi-tab)
+    const hasOtherSockets = Array.from(this.sockets.values()).some(
+      (s) => s.sessionId === entry.sessionId && s.participantId === entry.participantId,
+    );
+
     const participant = this.getParticipant(entry.sessionId, entry.participantId);
-    if (participant) {
+    if (participant && !hasOtherSockets) {
       participant.isOnline = false;
       this.logger.log(
         `Participant marked offline: [${participant.displayName}] (ID: ${participant.id}) in session ${entry.sessionId}`,

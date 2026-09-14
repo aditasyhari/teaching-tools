@@ -44,10 +44,10 @@ export function ScoreboardView(): React.JSX.Element {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#e8e4dc] shadow-sm">
         <div className="flex items-center gap-2">
           <Trophy className="w-5 h-5 text-amber-500" />
-          <h1 className="text-lg font-bold text-slate-900">Scoreboard Kelas</h1>
+          <h1 className="text-lg font-bold text-stone-900">Scoreboard Kelas</h1>
           <Badge variant="neutral" size="sm">
             {teamCount} Tim
           </Badge>
@@ -86,7 +86,7 @@ export function ScoreboardView(): React.JSX.Element {
             size="sm"
             onClick={toggleFullscreen}
             aria-label="Mode Layar Penuh / Proyektor"
-            leftIcon={<Maximize2 className="w-4 h-4 text-slate-700" />}
+            leftIcon={<Maximize2 className="w-4 h-4 text-stone-700" />}
           >
             Layar Penuh
           </Button>
@@ -95,8 +95,8 @@ export function ScoreboardView(): React.JSX.Element {
 
       {/* Teams Grid */}
       {teams.length === 0 ? (
-        <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-12 text-center flex flex-col items-center justify-center min-h-[360px] text-slate-400 space-y-3">
-          <Trophy className="w-12 h-12 text-slate-300" />
+        <div className="bg-white rounded-3xl border-2 border-dashed border-[#e8e4dc] p-12 text-center flex flex-col items-center justify-center min-h-[360px] text-stone-400 space-y-3">
+          <Trophy className="w-12 h-12 text-stone-300" />
           <p className="text-sm font-medium">
             Papan skor kosong. Klik <b>Tambah Tim</b> untuk memulai kompetisi.
           </p>
@@ -114,7 +114,7 @@ export function ScoreboardView(): React.JSX.Element {
           {teams.map((team) => (
             <div
               key={team.id}
-              className="bg-white rounded-3xl border-2 border-slate-200 p-6 shadow-sm flex flex-col justify-between gap-6 transition-all hover:border-slate-300"
+              className="bg-white rounded-3xl border-2 border-[#e8e4dc] p-6 shadow-sm flex flex-col justify-between gap-6 transition-all hover:border-amber-300"
               style={{ borderTopColor: team.color, borderTopWidth: 6 }}
             >
               {/* Team Header */}
@@ -187,7 +187,7 @@ export function ScoreboardView(): React.JSX.Element {
                     type="button"
                     onClick={() => changeScore(team.id, -1)}
                     aria-label={`Kurang 1 poin untuk ${team.name}`}
-                    className="min-h-[48px] rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-bold text-lg flex items-center justify-center transition-all"
+                    className="min-h-[48px] rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 text-stone-800 font-bold text-lg flex items-center justify-center transition-all border border-stone-200/50"
                   >
                     <Minus className="w-5 h-5" />
                   </button>
@@ -196,7 +196,7 @@ export function ScoreboardView(): React.JSX.Element {
                     type="button"
                     onClick={() => changeScore(team.id, 1)}
                     aria-label={`Tambah 1 poin untuk ${team.name}`}
-                    className="min-h-[48px] rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-lg flex items-center justify-center shadow-xs transition-all"
+                    className="min-h-[48px] rounded-2xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-950 font-black text-lg flex items-center justify-center shadow-xs transition-all border border-amber-600/30"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
@@ -208,7 +208,7 @@ export function ScoreboardView(): React.JSX.Element {
                     type="button"
                     onClick={() => changeScore(team.id, -5)}
                     aria-label={`Kurang 5 poin untuk ${team.name}`}
-                    className="min-h-[40px] rounded-xl bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-600 font-semibold text-xs transition-all"
+                    className="min-h-[40px] rounded-xl bg-stone-50 hover:bg-stone-100 active:scale-95 text-stone-600 font-semibold text-xs transition-all border border-stone-200/40"
                   >
                     -5
                   </button>
@@ -217,7 +217,7 @@ export function ScoreboardView(): React.JSX.Element {
                     type="button"
                     onClick={() => changeScore(team.id, 5)}
                     aria-label={`Tambah 5 poin untuk ${team.name}`}
-                    className="min-h-[40px] rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-700 font-semibold text-xs transition-all"
+                    className="min-h-[40px] rounded-xl bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-900 font-semibold text-xs transition-all border border-amber-200/60"
                   >
                     +5
                   </button>

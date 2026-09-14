@@ -41,10 +41,14 @@ export default function ProjectorEntryPage(): React.JSX.Element {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <label
+              htmlFor="projector-session-code"
+              className="text-xs font-bold uppercase tracking-wider text-slate-400"
+            >
               Kode Sesi Kelas (6 Karakter)
             </label>
             <Input
+              id="projector-session-code"
               value={code}
               onChange={(e) => {
                 setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6));

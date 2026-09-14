@@ -12,6 +12,7 @@ import {
 import { SessionsService } from './sessions.service';
 import { SessionsGateway } from './sessions.gateway';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { JoinCodeRateLimitGuard } from './guards/join-code-rate-limit.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { TeachingSession, SessionSnapshot, SessionParticipant, User } from '@walikelas/types';
 import { createSessionSchema, joinCodeSchema } from '@walikelas/validation';
@@ -25,8 +26,10 @@ export class SessionsController {
 
   /**
    * Public: Verify join code and return session basic info.
+   * Rate limited to prevent automated brute-force enumeration.
    */
   @Post('verify-code')
+  @UseGuards(JoinCodeRateLimitGuard)
   @HttpCode(HttpStatus.OK)
   async verifyCode(@Body('code') code: string): Promise<{
     id: string;

@@ -241,16 +241,23 @@ export class AuthService {
     };
   }
 
-  // Development-only login fallback (Strictly blocked in production)
+  // Development-only login fallback (Strictly blocked outside development & test)
   async devLogin(
     payload: { role?: UserRole; email?: string; name?: string } | undefined,
     context: SessionContext,
   ): Promise<{ sessionToken: string; expiresAt: Date; data: AuthMeResponse }> {
-    if (process.env.NODE_ENV === 'production') {
-      throw new UnauthorizedException('Dev login dinonaktifkan di environment produksi.');
+    const env = process.env.NODE_ENV;
+    if (env !== 'development' && env !== 'test') {
+      throw new UnauthorizedException('Dev login dinonaktifkan di luar environment development.');
     }
 
     const role = payload?.role || 'TEACHER';
+    // SEC-004: Prevent unauthorized role elevation to ADMIN in non-production environments
+    if (role === 'ADMIN' && process.env.ALLOW_DEV_ADMIN !== 'true' && env !== 'test') {
+      throw new UnauthorizedException(
+        'Akses admin via dev-login memerlukan konfigurasi ALLOW_DEV_ADMIN=true.',
+      );
+    }
     const email = (
       payload?.email || (role === 'ADMIN' ? 'admin@walikelas.id' : 'guru@sekolah.id')
     ).toLowerCase();

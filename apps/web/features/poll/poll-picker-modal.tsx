@@ -85,8 +85,24 @@ export function PollPickerModal({
     }
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="poll-picker-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+    >
       <div className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-5">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-border pb-3">
@@ -94,7 +110,9 @@ export function PollPickerModal({
             <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
               <BarChart2 className="w-4 h-4" />
             </div>
-            <h3 className="text-base font-bold text-foreground">Mulai Polling / Quick Feedback</h3>
+            <h3 id="poll-picker-dialog-title" className="text-base font-bold text-foreground">
+              Mulai Polling / Quick Feedback
+            </h3>
           </div>
           <button
             type="button"

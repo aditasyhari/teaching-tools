@@ -149,11 +149,11 @@ export function TeacherNotesView(): React.JSX.Element {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Top Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#e8e4dc] shadow-xs">
         <div className="flex items-center gap-2">
-          <FileText className="w-5 h-5 text-blue-600" />
-          <h1 className="text-lg font-bold text-slate-900">Catatan Guru</h1>
-          <Badge variant="neutral" size="sm">
+          <FileText className="w-5 h-5 text-rose-600" />
+          <h1 className="text-lg font-bold text-stone-900">Catatan Guru</h1>
+          <Badge variant="neutral" size="sm" className="bg-rose-100/70 text-rose-900 font-semibold border-none">
             {notes.length} Catatan
           </Badge>
         </div>
@@ -161,6 +161,7 @@ export function TeacherNotesView(): React.JSX.Element {
         <Button
           variant="primary"
           size="sm"
+          className="bg-rose-600 hover:bg-rose-700 text-white font-semibold"
           leftIcon={<Plus className="w-4 h-4" />}
           onClick={openNewNoteModal}
         >

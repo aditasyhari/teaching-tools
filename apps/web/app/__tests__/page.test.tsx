@@ -23,7 +23,7 @@ describe('HomePage', () => {
     render(<HomePage />);
     expect(
       screen.getByRole('heading', {
-        name: /Perkakas Mengajar Modern untuk Kelas yang/i,
+        name: /Tools praktis untuk membuat kegiatan mengajar lebih/i,
       }),
     ).toBeDefined();
 
@@ -33,14 +33,14 @@ describe('HomePage', () => {
 
   it('renders student session join card and input', () => {
     render(<HomePage />);
-    expect(screen.getByText('Punya Kode Sesi Kelas?')).toBeDefined();
-    expect(screen.getByPlaceholderText('CONTOH: WK-982')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Gabung Sesi Kelas Sekarang/i })).toBeDefined();
+    expect(screen.getByText(/Punya Kode Sesi Kelas Hari Ini\?/i)).toBeDefined();
+    expect(screen.getByPlaceholderText('KODE: WK-982')).toBeDefined();
+    expect(screen.getByRole('button', { name: /Gabung/i })).toBeDefined();
   });
 
   it('renders tool collections and how-it-works section', () => {
     render(<HomePage />);
-    expect(screen.getByText('Cara Kerja Sederhana & Efisien')).toBeDefined();
-    expect(screen.getByText('13 Perkakas Mengajar Terpadu')).toBeDefined();
+    expect(screen.getByText(/Tiga Langkah Sederhana Menghidupkan Kelas/i)).toBeDefined();
+    expect(screen.getByText(/Koleksi Perkakas Mengajar Terpadu/i)).toBeDefined();
   });
 });

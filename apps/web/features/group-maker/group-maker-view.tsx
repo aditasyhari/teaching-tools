@@ -65,11 +65,11 @@ export function GroupMakerView(): React.JSX.Element {
   return (
     <div className="max-w-5xl mx-auto space-y-6 print:m-0 print:p-0">
       {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#e8e4dc] shadow-xs print:hidden">
         <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-blue-600" />
-          <h1 className="text-lg font-bold text-slate-900">Group Maker</h1>
-          <Badge variant="neutral" size="sm">
+          <Users className="w-5 h-5 text-teal-600" />
+          <h1 className="text-lg font-bold text-stone-900">Group Maker</h1>
+          <Badge variant="neutral" size="sm" className="bg-teal-100/70 text-teal-900 font-semibold border-none">
             {itemCount} nama terdaftar
           </Badge>
         </div>
@@ -184,7 +184,7 @@ export function GroupMakerView(): React.JSX.Element {
           <Button
             variant="primary"
             size="lg"
-            className="w-full text-base shadow-sm"
+            className="w-full text-base shadow-sm bg-teal-600 hover:bg-teal-700 text-white font-semibold"
             disabled={itemCount === 0}
             leftIcon={<Sparkles className="w-5 h-5" />}
             onClick={generate}

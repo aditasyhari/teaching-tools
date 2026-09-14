@@ -46,7 +46,7 @@ export default function TeacherHomePage(): React.JSX.Element {
       name: 'Timer Kelas',
       category: 'Utilitas Lokal',
       desc: 'Hitung mundur pengerjaan tugas atau istirahat',
-      icon: <Clock className="w-5 h-5 text-blue-600" />,
+      icon: <Clock className="w-5 h-5 text-amber-600" />,
       href: '/teacher/tools?launch=timer',
     },
     {
@@ -54,7 +54,7 @@ export default function TeacherHomePage(): React.JSX.Element {
       name: 'Pemilih Acak',
       category: 'Utilitas Lokal',
       desc: 'Pilih nama siswa atau giliran menjawab secara adil',
-      icon: <Shuffle className="w-5 h-5 text-blue-600" />,
+      icon: <Shuffle className="w-5 h-5 text-violet-600" />,
       href: '/teacher/tools?launch=random-picker',
     },
     {
@@ -70,7 +70,7 @@ export default function TeacherHomePage(): React.JSX.Element {
       name: 'Live Poll',
       category: 'Interaktif Realtime',
       desc: 'Jajak pendapat cepat untuk cek pemahaman konsep',
-      icon: <BarChart2 className="w-5 h-5 text-blue-600" />,
+      icon: <BarChart2 className="w-5 h-5 text-emerald-600" />,
       href: '/teacher/tools?launch=live-poll',
     },
   ];
@@ -109,14 +109,14 @@ export default function TeacherHomePage(): React.JSX.Element {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Perkakas Cepat</h2>
-            <p className="text-xs text-slate-500">
+            <h2 className="text-lg font-bold text-stone-900">Perkakas Cepat</h2>
+            <p className="text-xs text-stone-500">
               Luncurkan perkakas yang paling sering digunakan dalam hitungan detik.
             </p>
           </div>
           <a
             href="/teacher/tools"
-            className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
+            className="text-xs font-bold text-stone-700 hover:text-stone-950 hover:underline flex items-center gap-1"
           >
             <span>Lihat semua 13 perkakas</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -128,21 +128,21 @@ export default function TeacherHomePage(): React.JSX.Element {
             <a
               key={tool.id}
               href={tool.href}
-              className="p-5 bg-white rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-sm transition-all flex flex-col justify-between group"
+              className="p-5 bg-white rounded-2xl border border-[#e8e4dc] hover:border-amber-300 hover:shadow-md transition-all flex flex-col justify-between group transform hover:-translate-y-0.5"
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-lg bg-blue-50 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-colors">
+                  <div className="w-10 h-10 rounded-xl bg-stone-50 border border-stone-200/70 group-hover:bg-amber-500 group-hover:border-amber-500 flex items-center justify-center transition-all">
                     {tool.icon}
                   </div>
-                  <span className="text-[11px] font-medium text-slate-400">{tool.category}</span>
+                  <span className="text-[11px] font-semibold text-stone-400">{tool.category}</span>
                 </div>
-                <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                <h3 className="font-bold text-stone-900 group-hover:text-amber-700 transition-colors">
                   {tool.name}
                 </h3>
-                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{tool.desc}</p>
+                <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed">{tool.desc}</p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-medium text-blue-600">
+              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs font-bold text-amber-800">
                 <span>Buka Sekarang</span>
                 <Play className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
               </div>
@@ -155,8 +155,8 @@ export default function TeacherHomePage(): React.JSX.Element {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Sesi Kelas Berjalan</h2>
-            <p className="text-xs text-slate-500">
+            <h2 className="text-lg font-bold text-stone-900">Sesi Kelas Berjalan</h2>
+            <p className="text-xs text-stone-500">
               Hubungkan layar proyektor kelas dengan gawai murid.
             </p>
           </div>

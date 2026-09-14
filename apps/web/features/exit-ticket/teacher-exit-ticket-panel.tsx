@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ClipboardCheck,
   X,
@@ -75,6 +75,17 @@ export function TeacherExitTicketPanel({
   onOpenActivity,
   onCloseActivity,
 }: TeacherExitTicketPanelProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [title, setTitle] = useState('Refleksi Pembelajaran Hari Ini');
   const [isAnonymous, setIsAnonymous] = useState(true);
@@ -192,7 +203,12 @@ export function TeacherExitTicketPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="exit-ticket-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+    >
       <div className="relative flex h-[90vh] max-h-[780px] w-full max-w-3xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
@@ -202,7 +218,7 @@ export function TeacherExitTicketPanel({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <h2 id="exit-ticket-dialog-title" className="text-lg font-bold text-slate-900 dark:text-slate-100">
                   Exit Ticket / Refleksi Akhir
                 </h2>
                 {activity && (

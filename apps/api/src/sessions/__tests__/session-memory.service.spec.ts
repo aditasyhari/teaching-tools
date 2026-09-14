@@ -127,4 +127,29 @@ describe('SessionMemoryService', () => {
     expect(originalBudi?.displayName).toBe('Budi Santoso');
     expect(originalBudi?.isOnline).toBe(false);
   });
+
+  it('REAL-002: should keep participant online if other sockets remain connected', () => {
+    // 1. Participant joins on Tab 1
+    const p = service.addParticipant('sess-1', 'Siti Rahma', undefined, 'tab-1-sock');
+    const token = p.reconnectToken!;
+
+    // 2. Same participant opens Tab 2 with reconnect token
+    service.addParticipant('sess-1', 'Siti Rahma', p.id, 'tab-2-sock', token);
+
+    expect(p.isOnline).toBe(true);
+
+    // 3. Tab 1 disconnects (e.g. user closes one tab)
+    const disconn1 = service.handleDisconnect('tab-1-sock');
+    expect(disconn1?.participant?.id).toBe(p.id);
+    // Participant should still be online because tab-2-sock is still connected!
+    expect(p.isOnline).toBe(true);
+    expect(service.getOnlineParticipantCount('sess-1')).toBe(1);
+
+    // 4. Tab 2 disconnects (all tabs closed)
+    const disconn2 = service.handleDisconnect('tab-2-sock');
+    expect(disconn2?.participant?.id).toBe(p.id);
+    // Now participant transitions to offline
+    expect(p.isOnline).toBe(false);
+    expect(service.getOnlineParticipantCount('sess-1')).toBe(0);
+  });
 });

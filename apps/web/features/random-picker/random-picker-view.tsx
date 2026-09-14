@@ -53,11 +53,11 @@ export function RandomPickerView(): React.JSX.Element {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#e8e4dc] shadow-xs">
         <div className="flex items-center gap-2">
-          <Shuffle className="w-5 h-5 text-blue-600" />
-          <h1 className="text-lg font-bold text-slate-900">Random Picker</h1>
-          <Badge variant="neutral" size="sm">
+          <Shuffle className="w-5 h-5 text-violet-600" />
+          <h1 className="text-lg font-bold text-stone-900">Random Picker</h1>
+          <Badge variant="neutral" size="sm" className="bg-violet-100/70 text-violet-900 font-semibold border-none">
             {itemCount} nama terdaftar
           </Badge>
         </div>
@@ -134,18 +134,18 @@ export function RandomPickerView(): React.JSX.Element {
               <div
                 className={`space-y-4 ${isPicking ? 'scale-95 opacity-50' : 'scale-100 opacity-100'} transition-all duration-300`}
               >
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
-                  <Sparkles className="w-3.5 h-3.5" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-100 text-violet-800 text-xs font-bold">
+                  <Sparkles className="w-3.5 h-3.5 text-violet-600" />
                   <span>Nama Terpilih!</span>
                 </div>
 
-                <div className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+                <div className="text-3xl sm:text-5xl font-black text-stone-900 tracking-tight drop-shadow-xs">
                   {selectedItem}
                 </div>
               </div>
             ) : (
-              <div className="space-y-3 text-slate-400">
-                <Users className="w-12 h-12 mx-auto text-slate-300" />
+              <div className="space-y-3 text-stone-400">
+                <Users className="w-12 h-12 mx-auto text-stone-300" />
                 <p className="text-sm font-medium">
                   {itemCount > 0
                     ? 'Klik tombol di bawah untuk memilih nama acak'
@@ -159,7 +159,7 @@ export function RandomPickerView(): React.JSX.Element {
               <Button
                 variant="primary"
                 size="lg"
-                className="px-8 text-base shadow-md"
+                className="px-8 text-base shadow-md bg-violet-600 hover:bg-violet-700 text-white font-semibold"
                 disabled={itemCount === 0 || isPicking}
                 leftIcon={<Shuffle className="w-5 h-5" />}
                 onClick={() => pick()}

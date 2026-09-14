@@ -71,10 +71,10 @@ export function TimerView(): React.JSX.Element {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#e8e4dc] shadow-xs">
         <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-blue-600" />
-          <h1 className="text-lg font-bold text-slate-900">Timer Kelas</h1>
+          <Clock className="w-5 h-5 text-amber-600" />
+          <h1 className="text-lg font-bold text-stone-900">Timer Kelas</h1>
           {isCompleted && (
             <Badge variant="danger" size="sm">
               Waktu Selesai!
@@ -90,9 +90,9 @@ export function TimerView(): React.JSX.Element {
             aria-label={soundEnabled ? 'Matikan suara alarm' : 'Nyalakan suara alarm'}
             leftIcon={
               soundEnabled ? (
-                <Volume2 className="w-4 h-4 text-slate-700" />
+                <Volume2 className="w-4 h-4 text-stone-700" />
               ) : (
-                <VolumeX className="w-4 h-4 text-slate-400" />
+                <VolumeX className="w-4 h-4 text-stone-400" />
               )
             }
           >
@@ -104,7 +104,7 @@ export function TimerView(): React.JSX.Element {
             size="sm"
             onClick={toggleFullscreen}
             aria-label="Mode Layar Penuh / Proyektor"
-            leftIcon={<Maximize2 className="w-4 h-4 text-slate-700" />}
+            leftIcon={<Maximize2 className="w-4 h-4 text-stone-700" />}
           >
             Layar Penuh
           </Button>
@@ -113,12 +113,12 @@ export function TimerView(): React.JSX.Element {
 
       {/* Main Timer Display Area */}
       <div
-        className={`bg-white rounded-3xl border-2 p-8 sm:p-14 shadow-sm flex flex-col items-center justify-center text-center transition-all ${
+        className={`bg-white rounded-3xl border-2 p-8 sm:p-14 shadow-xs flex flex-col items-center justify-center text-center transition-all ${
           isCompleted
             ? 'border-red-500 bg-red-50/40 ring-4 ring-red-100'
             : isRunning
-              ? 'border-blue-500 ring-4 ring-blue-50'
-              : 'border-slate-200'
+              ? 'border-amber-500 ring-4 ring-amber-100'
+              : 'border-[#e8e4dc]'
         }`}
       >
         {/* Visual Countdown Digits */}
@@ -126,18 +126,18 @@ export function TimerView(): React.JSX.Element {
           role="timer"
           aria-live="polite"
           aria-atomic="true"
-          className={`font-mono text-7xl sm:text-9xl font-extrabold tracking-tight select-none transition-colors ${
-            isCompleted ? 'text-red-600 animate-pulse' : 'text-slate-900'
+          className={`font-mono text-7xl sm:text-9xl font-black tracking-tight select-none transition-colors ${
+            isCompleted ? 'text-red-600 animate-pulse' : 'text-stone-900'
           }`}
         >
           {formatTime(remaining)}
         </div>
 
         {/* Visual Progress Bar */}
-        <div className="w-full max-w-md bg-slate-100 h-3 rounded-full mt-8 overflow-hidden">
+        <div className="w-full max-w-md bg-stone-100 h-3 rounded-full mt-8 overflow-hidden">
           <div
             className={`h-full transition-all duration-300 ${
-              isCompleted ? 'bg-red-600' : 'bg-blue-600'
+              isCompleted ? 'bg-red-600' : 'bg-amber-500'
             }`}
             style={{ width: `${progress}%` }}
           />

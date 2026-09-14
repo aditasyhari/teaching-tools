@@ -525,6 +525,14 @@ describe('SessionsGateway', () => {
         questionId: 'q-1',
         optionId: 'opt-1',
       });
+      // REAL-001: Distribution update must be scoped strictly to the teacher room
+      expect(mockServer.to).toHaveBeenCalledWith('session:sess-123:teachers');
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        'quiz:distribution-update',
+        expect.objectContaining({
+          answeredCount: 1,
+        }),
+      );
     });
 
     it('SEC-001: rejects quiz:answer with FORBIDDEN when sessionId does not match socket session', async () => {

@@ -73,10 +73,10 @@ export default function TeacherLayout({ children }: { children?: any }) {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#faf8f5]">
         <div className="flex flex-col items-center gap-3">
           <Spinner size="lg" />
-          <p className="text-sm text-slate-500 font-medium">Memuat Ruang Guru...</p>
+          <p className="text-sm text-stone-500 font-medium">Memuat Ruang Guru...</p>
         </div>
       </div>
     );
@@ -85,15 +85,15 @@ export default function TeacherLayout({ children }: { children?: any }) {
   // Unauthenticated guard state
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50">
-        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 shadow-sm text-center space-y-6">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#faf8f5]">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-[#e8e4dc] p-8 shadow-sm text-center space-y-6">
           <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto font-bold text-2xl border border-blue-100">
             WK
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900">Masuk ke Ruang Guru</h1>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <h1 className="text-2xl font-bold text-stone-900">Masuk ke Ruang Guru</h1>
+            <p className="text-sm text-stone-600 leading-relaxed">
               Silakan masuk dengan akun Google untuk mengelola sesi kelas, kuis interaktif, dan
               perkakas mengajar.
             </p>
@@ -103,7 +103,7 @@ export default function TeacherLayout({ children }: { children?: any }) {
             <Button
               variant="primary"
               size="lg"
-              className="w-full"
+              className="w-full bg-blue-600 hover:bg-blue-700 font-semibold"
               leftIcon={<ShieldCheck className="w-5 h-5 text-white" />}
               onClick={loginWithGoogle}
             >
@@ -111,11 +111,11 @@ export default function TeacherLayout({ children }: { children?: any }) {
             </Button>
 
             {process.env.NODE_ENV !== 'production' && (
-              <div className="pt-2 border-t border-slate-100">
+              <div className="pt-2 border-t border-stone-100">
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="w-full text-xs text-slate-600"
+                  className="w-full text-xs text-stone-600"
                   leftIcon={<LogIn className="w-3.5 h-3.5" />}
                   onClick={() => devLogin('TEACHER')}
                 >
@@ -125,7 +125,7 @@ export default function TeacherLayout({ children }: { children?: any }) {
             )}
           </div>
 
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-stone-400">
             WaliKelas Teaching Tools V1 &bull; Google OAuth/OIDC Resmi
           </p>
         </div>
@@ -134,7 +134,7 @@ export default function TeacherLayout({ children }: { children?: any }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#faf8f5] flex flex-col md:flex-row">
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <Sidebar

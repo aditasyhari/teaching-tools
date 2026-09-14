@@ -7,7 +7,7 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from './sessions.service';
@@ -95,11 +95,52 @@ import type {
   },
   namespace: '/sessions',
 })
-export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class SessionsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy
+{
   @WebSocketServer()
   server!: Server;
 
   private readonly logger = new Logger(SessionsGateway.name);
+
+  // REAL-001: 500ms trailing debounce timer map per session for room-wide quiz stats broadcasts
+  private quizStatsDebounceTimers = new Map<string, NodeJS.Timeout>();
+
+  private scheduleQuizStatsBroadcast(
+    sessionId: string,
+    answeredCount: number,
+    totalParticipants: number,
+  ): void {
+    const existing = this.quizStatsDebounceTimers.get(sessionId);
+    if (existing) {
+      clearTimeout(existing);
+    }
+
+    const timer = setTimeout(() => {
+      this.quizStatsDebounceTimers.delete(sessionId);
+      this.server.to(`session:${sessionId}`).emit('quiz:stats-update', {
+        answeredCount,
+        totalParticipants,
+      });
+    }, 500);
+
+    this.quizStatsDebounceTimers.set(sessionId, timer);
+  }
+
+  private flushQuizStatsBroadcast(sessionId: string): void {
+    const existing = this.quizStatsDebounceTimers.get(sessionId);
+    if (existing) {
+      clearTimeout(existing);
+      this.quizStatsDebounceTimers.delete(sessionId);
+    }
+  }
+
+  onModuleDestroy(): void {
+    for (const timer of this.quizStatsDebounceTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.quizStatsDebounceTimers.clear();
+  }
 
   constructor(
     private readonly prisma: PrismaService,
@@ -191,7 +232,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     const result = this.memory.handleDisconnect(client.id);
     if (!result) return;
 
-    if (result.role === 'PARTICIPANT' && result.participant) {
+    if (result.role === 'PARTICIPANT' && result.participant && !result.participant.isOnline) {
       const remainingOnline = this.memory.getOnlineParticipantCount(result.sessionId);
 
       this.server.to(`session:${result.sessionId}`).emit('session:participant-left', {
@@ -684,17 +725,18 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     const participants = this.memory.getParticipants(sessionId);
     const teacherSnapshot = this.quizRuntime.getTeacherSnapshot(sessionId, participants);
     if (teacherSnapshot) {
-      this.server.to(`session:${sessionId}`).emit('quiz:stats-update', {
-        answeredCount: teacherSnapshot.answeredCount,
-        totalParticipants: teacherSnapshot.totalParticipants,
-      });
-
-      // Send complete snapshot to teacher sockets
-      const teachers = this.memory.getParticipants(sessionId);
-      this.server.to(`session:${sessionId}`).emit('quiz:distribution-update', {
+      // REAL-001: Route live distribution strictly to teacher sockets room
+      this.server.to(`session:${sessionId}:teachers`).emit('quiz:distribution-update', {
         distribution: teacherSnapshot.distribution,
         answeredCount: teacherSnapshot.answeredCount,
       });
+
+      // REAL-001: Debounce room-wide stats broadcast (500ms) to eliminate O(N^2) broadcast storm
+      this.scheduleQuizStatsBroadcast(
+        sessionId,
+        teacherSnapshot.answeredCount,
+        teacherSnapshot.totalParticipants,
+      );
     }
   }
 
@@ -718,6 +760,8 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
       }
 
       await this.sessionsService.findOne(payload.sessionId, teacher.id);
+
+      this.flushQuizStatsBroadcast(payload.sessionId);
 
       const result = this.quizRuntime.endQuestion(payload.sessionId);
       if (!result) return;
@@ -832,6 +876,8 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
       }
 
       await this.sessionsService.findOne(payload.sessionId, teacher.id);
+
+      this.flushQuizStatsBroadcast(payload.sessionId);
 
       this.quizRuntime.finishQuiz(payload.sessionId);
 

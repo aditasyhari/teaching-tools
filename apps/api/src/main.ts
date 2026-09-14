@@ -11,6 +11,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Cookie Parser for application sessions
+  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET environment variable is required in production.');
+  }
   app.use(cookieParser(process.env.SESSION_SECRET || 'wk-dev-secret'));
 
   // Security Headers

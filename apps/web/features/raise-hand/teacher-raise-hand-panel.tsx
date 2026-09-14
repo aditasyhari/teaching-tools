@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Hand, X, Mic, CheckCircle2, Clock, Volume2, UserCheck } from 'lucide-react';
 import { Button } from '@walikelas/ui';
 import type { RaisedHandItem } from '@walikelas/types';
@@ -36,12 +36,28 @@ export function TeacherRaiseHandPanel({
   onLowerParticipant,
   onLowerAll,
 }: TeacherRaiseHandPanelProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const hasAnyActive = queue.length > 0 || currentSpeaker !== null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="raise-hand-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+    >
       <div className="relative flex h-[90vh] max-h-[700px] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
@@ -51,7 +67,7 @@ export function TeacherRaiseHandPanel({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <h2 id="raise-hand-dialog-title" className="text-lg font-bold text-slate-900 dark:text-slate-100">
                   Antrean Angkat Tangan
                 </h2>
                 {raisedCount > 0 && (
