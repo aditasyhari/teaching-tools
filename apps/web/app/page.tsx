@@ -14,7 +14,7 @@ import {
 
 export default function HomePage(): React.JSX.Element {
   return (
-    <div className="min-h-screen flex flex-col bg-[#faf8f5]">
+    <div className="min-h-screen flex flex-col bg-[#faf8f5]"> 
       <LandingNavbar />
       <main id="main-content" tabIndex={-1} className="focus:outline-none flex-1">
         <HeroSection />
@@ -23,7 +23,7 @@ export default function HomePage(): React.JSX.Element {
         <ClassroomMomentsSection />
         <ClassroomScenarioSection />
         <HowItWorksSection />
-        <StudentExperienceSection />
+        <StudentExperienceSection /> 
         <FinalCtaSection />
       </main>
       <LandingFooter />
