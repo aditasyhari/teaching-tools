@@ -136,46 +136,46 @@ export function ParticipantLiveQuizView({
 
   // View: Active Question Screen for Participant
   return (
-    <div className="space-y-5 animate-in fade-in duration-300">
+    <div className="space-y-4 animate-in fade-in duration-300">
       {/* Top Participant Quiz Bar */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+      <div className="bg-white border border-[#e8e4dc] rounded-2xl p-4 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Badge variant="default">
             Soal {questionNumber} / {totalQuestions}
           </Badge>
-          <span className="text-xs font-bold text-slate-500">
+          <span className="text-xs font-bold text-stone-500">
             {participantQuestion?.points ?? 100} Pts
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           <div
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-xs font-black ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-xs font-bold ${
               secondsRemaining <= 5 && !isQuestionEnded
-                ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 animate-pulse'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200'
+                ? 'bg-rose-100 text-rose-800 animate-pulse'
+                : 'bg-stone-100 text-stone-800'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
             <span>{isQuestionEnded ? 'Tutup' : `${secondsRemaining}s`}</span>
           </div>
 
-          <div className="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 rounded-full text-xs font-bold border border-indigo-200 dark:border-indigo-800">
+          <div className="px-3 py-1 bg-amber-50 text-amber-900 rounded-full text-xs font-bold border border-amber-200/60">
             Skor: {totalScore}
           </div>
         </div>
       </div>
 
       {/* Question Text */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm text-center">
-        <h3 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-slate-100 leading-snug">
+      <div className="bg-white border border-[#e8e4dc] rounded-3xl p-6 sm:p-8 shadow-xs text-center">
+        <h3 className="text-lg sm:text-2xl font-black text-stone-900 leading-snug">
           {participantQuestion?.questionText || 'Menunggu pertanyaan...'}
         </h3>
       </div>
 
       {/* Feedback Banner when Answered */}
       {hasAnswered && !isQuestionEnded && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-900/50 dark:text-emerald-300 flex items-center justify-center gap-2 shadow-sm text-sm font-bold animate-in fade-in">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 flex items-center justify-center gap-2 shadow-xs text-sm font-bold animate-in fade-in">
           <Lock className="w-4 h-4" />
           <span>Jawaban Terkunci! Menunggu guru menutup soal...</span>
         </div>
@@ -184,12 +184,12 @@ export function ParticipantLiveQuizView({
       {/* Result Reveal Banner when question ended */}
       {isQuestionEnded && (
         <div
-          className={`p-4 rounded-2xl border-2 shadow-md flex items-center justify-center gap-3 text-center animate-in zoom-in-95 ${
+          className={`p-4 rounded-2xl border-2 shadow-xs flex items-center justify-center gap-3 text-center animate-in zoom-in-95 ${
             wasCorrect === true
-              ? 'bg-emerald-100 dark:bg-emerald-950/60 border-emerald-500 text-emerald-900 dark:text-emerald-100'
+              ? 'bg-emerald-50 border-emerald-500 text-emerald-900'
               : wasCorrect === false
-                ? 'bg-rose-100 dark:bg-rose-950/60 border-rose-500 text-rose-900 dark:text-rose-100'
-                : 'bg-slate-100 dark:bg-slate-800 border-slate-300 text-slate-800 dark:text-slate-200'
+                ? 'bg-rose-50 border-rose-500 text-rose-900'
+                : 'bg-stone-100 border-stone-300 text-stone-800'
           }`}
         >
           {wasCorrect === true ? (
@@ -219,7 +219,7 @@ export function ParticipantLiveQuizView({
       )}
 
       {/* Touch-Friendly Options Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
         {participantQuestion?.options.map((opt, idx) => {
           const isSelected = selectedOptionId === opt.id;
           const isButtonDisabled = hasAnswered || isQuestionEnded;
@@ -230,17 +230,17 @@ export function ParticipantLiveQuizView({
               type="button"
               disabled={isButtonDisabled}
               onClick={() => participantQuestion && onSubmitAnswer(participantQuestion.id, opt.id)}
-              className={`p-5 rounded-2xl border-2 text-left font-bold transition-all active:scale-[0.98] flex items-center gap-4 ${
+              className={`min-h-[56px] p-4 sm:p-5 rounded-2xl border-2 text-left font-bold transition-all duration-150 ease-out active:scale-[0.98] flex items-center gap-3.5 ${
                 isSelected
-                  ? 'ring-4 ring-indigo-500 dark:ring-indigo-400 border-indigo-600 bg-indigo-50 dark:bg-indigo-950 shadow-lg scale-[1.01]'
+                  ? 'ring-4 ring-amber-400 border-amber-500 bg-amber-50/90 shadow-sm scale-[1.01]'
                   : isButtonDisabled
-                    ? 'opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400'
-                    : `${OPTION_STYLES[idx % 4]} shadow-sm hover:shadow-md cursor-pointer`
+                    ? 'opacity-50 cursor-not-allowed border-stone-200 bg-stone-50 text-stone-400'
+                    : `${OPTION_STYLES[idx % 4]} shadow-xs hover:shadow-sm cursor-pointer`
               }`}
             >
               <span
-                className={`w-9 h-9 rounded-xl text-sm font-black text-white flex items-center justify-center flex-shrink-0 shadow-sm ${
-                  isSelected ? 'bg-indigo-600' : OPTION_BADGES[idx % 4]
+                className={`w-9 h-9 rounded-xl text-sm font-black text-white flex items-center justify-center flex-shrink-0 shadow-xs ${
+                  isSelected ? 'bg-amber-600' : OPTION_BADGES[idx % 4]
                 }`}
               >
                 {OPTION_LETTERS[idx]}
@@ -249,7 +249,7 @@ export function ParticipantLiveQuizView({
               <span className="text-base flex-1 line-clamp-2">{opt.optionText}</span>
 
               {isSelected && (
-                <CheckCircle2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                <CheckCircle2 className="w-6 h-6 text-amber-600 flex-shrink-0" />
               )}
             </button>
           );

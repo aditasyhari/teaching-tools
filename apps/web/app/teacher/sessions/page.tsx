@@ -3,8 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Radio, Plus, ArrowRight, X, AlertCircle } from 'lucide-react';
-import { PageHeaderSection, EmptyState, Button, Badge, Input, Select } from '@walikelas/ui';
+import { Radio, Plus, ArrowRight, AlertCircle } from 'lucide-react';
+import {
+  PageHeaderSection,
+  EmptyState,
+  Button,
+  Badge,
+  Card,
+  Input,
+  Select,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@walikelas/ui';
 import type { TeachingSession } from '@walikelas/types';
 import { apiClient } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
@@ -125,9 +139,9 @@ export default function TeacherSessionsPage(): React.JSX.Element {
             const isEnded = sess.status === 'ENDED';
 
             return (
-              <div
+              <Card
                 key={sess.id}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:border-indigo-300 dark:hover:border-indigo-800 transition-all space-y-4"
+                className="p-5 flex flex-col justify-between hover:border-indigo-300 dark:hover:border-indigo-800 transition-all space-y-4"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -171,80 +185,75 @@ export default function TeacherSessionsPage(): React.JSX.Element {
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
       )}
 
       {/* Modal: Buat Sesi Baru */}
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                Buat Sesi Kelas Baru
-              </h3>
-              <button
-                onClick={() => setIsCreateOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader className="border-b border-border pb-3 text-left">
+            <DialogTitle className="text-lg font-bold text-foreground">
+              Buat Sesi Kelas Baru
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Mulai sesi interaktif langsung yang dapat dimasuki murid melalui kode sesi atau QR.
+            </DialogDescription>
+          </DialogHeader>
+
+          {modalError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{modalError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleCreateSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Judul Sesi
+              </label>
+              <Input
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Contoh: Kuis Bab 3 Biologi, Polling Diskusi..."
+                required
+                autoFocus
+              />
             </div>
 
-            {modalError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-medium flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{modalError}</span>
+            {classrooms && classrooms.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Kaitkan dengan Kelas (Opsional)
+                </label>
+                <Select
+                  value={selectedClassroomId}
+                  onChange={(e) => setSelectedClassroomId(e.target.value)}
+                  options={[
+                    { label: 'Tanpa Kelas (Umum)', value: '' },
+                    ...classrooms.map((c) => ({
+                      label: c.name,
+                      value: c.id,
+                    })),
+                  ]}
+                />
               </div>
             )}
 
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                  Judul Sesi
-                </label>
-                <Input
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Contoh: Kuis Bab 3 Biologi, Polling Diskusi..."
-                  required
-                  autoFocus
-                />
-              </div>
-
-              {classrooms && classrooms.length > 0 && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                    Kaitkan dengan Kelas (Opsional)
-                  </label>
-                  <Select
-                    value={selectedClassroomId}
-                    onChange={(e) => setSelectedClassroomId(e.target.value)}
-                    options={[
-                      { label: 'Tanpa Kelas (Umum)', value: '' },
-                      ...classrooms.map((c) => ({
-                        label: c.name,
-                        value: c.id,
-                      })),
-                    ]}
-                  />
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <Button type="button" variant="secondary" onClick={() => setIsCreateOpen(false)}>
-                  Batal
-                </Button>
-                <Button type="submit" variant="primary" disabled={creating}>
-                  {creating ? 'Membuat Sesi...' : 'Mulai Sesi'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <DialogFooter className="gap-2 sm:gap-2 pt-3 border-t border-border">
+              <Button type="button" variant="secondary" onClick={() => setIsCreateOpen(false)}>
+                Batal
+              </Button>
+              <Button type="submit" variant="primary" disabled={creating}>
+                {creating ? 'Membuat Sesi...' : 'Mulai Sesi'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

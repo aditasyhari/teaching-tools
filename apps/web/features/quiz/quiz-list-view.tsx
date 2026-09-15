@@ -4,7 +4,17 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus, Play, Edit2, Trash2, Search, Layers, AlertCircle } from 'lucide-react';
-import { Button, PageHeaderSection, EmptyState } from '@walikelas/ui';
+import {
+  Button,
+  PageHeaderSection,
+  EmptyState,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@walikelas/ui';
 import type { QuizSummary } from '@walikelas/types';
 import { fetchTeacherQuizzes, deleteQuiz } from '@walikelas/api-client';
 import { apiClient } from '../../lib/api';
@@ -194,25 +204,30 @@ export function QuizListView(): React.JSX.Element {
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-              <Trash2 className="w-6 h-6" />
+      <Dialog
+        open={Boolean(showDeleteModal)}
+        onOpenChange={(open) => !open && setShowDeleteModal(null)}
+      >
+        {showDeleteModal && (
+          <DialogContent className="max-w-md">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <DialogHeader className="text-left">
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Hapus Kuis Ini?
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  Kuis{' '}
+                  <span className="font-semibold text-foreground">
+                    &ldquo;{showDeleteModal.title}&rdquo;
+                  </span>{' '}
+                  beserta seluruh pertanyaannya akan dihapus secara permanen.
+                </DialogDescription>
+              </DialogHeader>
             </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                Hapus Kuis Ini?
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Kuis{' '}
-                <span className="font-semibold text-slate-900 dark:text-slate-200">
-                  &ldquo;{showDeleteModal.title}&rdquo;
-                </span>{' '}
-                beserta seluruh pertanyaannya akan dihapus secara permanen.
-              </p>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
+            <DialogFooter className="gap-2 sm:gap-2 pt-2">
               <Button
                 variant="secondary"
                 onClick={() => setShowDeleteModal(null)}
@@ -223,10 +238,10 @@ export function QuizListView(): React.JSX.Element {
               <Button variant="danger" onClick={handleDelete} disabled={Boolean(deletingId)}>
                 {deletingId ? 'Menghapus...' : 'Ya, Hapus Kuis'}
               </Button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 }

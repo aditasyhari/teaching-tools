@@ -12,11 +12,18 @@ import {
   Tv,
   BookOpen,
   ChevronDown,
-  ShieldCheck,
-  LogIn,
 } from 'lucide-react';
-import { Sidebar, Topbar, MobileNavigation, UserMenu, Button, Spinner } from '@walikelas/ui';
+import {
+  Sidebar,
+  Topbar,
+  MobileNavigation,
+  MobileDrawer,
+  UserMenu,
+  Button,
+  Spinner,
+} from '@walikelas/ui';
 import { useAuth } from '../../lib/auth-context';
+import { TeacherLoginView } from '@/components/auth/teacher-login-view';
 
 export default function TeacherLayout({ children }: { children?: any }) {
   const pathname = usePathname();
@@ -31,49 +38,51 @@ export default function TeacherLayout({ children }: { children?: any }) {
     setActiveClassroom,
     isLoading,
     isAuthenticated,
-    loginWithGoogle,
-    devLogin,
     logout,
   } = useAuth();
 
   const navItems = [
     {
-      label: 'Beranda',
+      label: 'Dasbor',
       href: '/teacher',
-      icon: <LayoutDashboard className="w-4 h-4" />,
+      icon: <LayoutDashboard className="w-5 h-5" />,
       active: pathname === '/teacher',
+      badge: undefined,
     },
     {
       label: 'Perkakas Mengajar',
       href: '/teacher/tools',
-      icon: <Wrench className="w-4 h-4" />,
+      icon: <Wrench className="w-5 h-5" />,
       active: pathname.startsWith('/teacher/tools'),
       badge: '13',
     },
     {
-      label: 'Sesi Kelas',
+      label: 'Sesi Aktif',
       href: '/teacher/sessions',
-      icon: <Radio className="w-4 h-4" />,
+      icon: <Radio className="w-5 h-5" />,
       active: pathname.startsWith('/teacher/sessions'),
+      badge: undefined,
     },
     {
-      label: 'Aktivitas Tersimpan',
-      href: '/teacher/activities',
-      icon: <FolderKanban className="w-4 h-4" />,
-      active: pathname.startsWith('/teacher/activities'),
+      label: 'Kelas Saya',
+      href: '/teacher/classrooms',
+      icon: <FolderKanban className="w-5 h-5" />,
+      active: pathname.startsWith('/teacher/classrooms'),
+      badge: classrooms.length > 0 ? String(classrooms.length) : undefined,
     },
     {
       label: 'Catatan Guru',
       href: '/teacher/notes',
-      icon: <FileText className="w-4 h-4" />,
+      icon: <FileText className="w-5 h-5" />,
       active: pathname.startsWith('/teacher/notes'),
+      badge: undefined,
     },
   ];
 
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#faf8f5]">
+      <div className="min-h-screen flex items-center justify-center bg-paper">
         <div className="flex flex-col items-center gap-3">
           <Spinner size="lg" />
           <p className="text-sm text-stone-500 font-medium">Memuat Ruang Guru...</p>
@@ -84,53 +93,7 @@ export default function TeacherLayout({ children }: { children?: any }) {
 
   // Unauthenticated guard state
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#faf8f5]">
-        <div className="max-w-md w-full bg-white rounded-2xl border border-[#e8e4dc] p-8 shadow-sm text-center space-y-6">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto font-bold text-2xl border border-blue-100">
-            WK
-          </div>
-
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-stone-900">Masuk ke Ruang Guru</h1>
-            <p className="text-sm text-stone-600 leading-relaxed">
-              Silakan masuk dengan akun Google untuk mengelola sesi kelas, kuis interaktif, dan
-              perkakas mengajar.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <Button
-              variant="primary"
-              size="lg"
-              className="w-full bg-blue-600 hover:bg-blue-700 font-semibold"
-              leftIcon={<ShieldCheck className="w-5 h-5 text-white" />}
-              onClick={loginWithGoogle}
-            >
-              Masuk dengan Akun Google
-            </Button>
-
-            {process.env.NODE_ENV !== 'production' && (
-              <div className="pt-2 border-t border-stone-100">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="w-full text-xs text-stone-600"
-                  leftIcon={<LogIn className="w-3.5 h-3.5" />}
-                  onClick={() => devLogin('TEACHER')}
-                >
-                  Masuk Cepat Guru (Mode Development)
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <p className="text-xs text-stone-400">
-            WaliKelas Teaching Tools V1 &bull; Google OAuth/OIDC Resmi
-          </p>
-        </div>
-      </div>
-    );
+    return <TeacherLoginView />;
   }
 
   return (
@@ -167,6 +130,44 @@ export default function TeacherLayout({ children }: { children?: any }) {
         />
       </div>
 
+      {/* Mobile Navigation Drawer */}
+      <MobileDrawer
+        open={mobileMenuOpen}
+        onOpenChange={setMobileMenuOpen}
+        title="Menu Ruang Guru"
+        description="Navigasi menu utama Ruang Guru WaliKelas"
+      >
+        <Sidebar
+          className="w-full h-full border-none static bg-slate-900"
+          brand={{
+            name: 'WaliKelas',
+            subtitle: 'Ruang Guru Console',
+            href: '/teacher',
+            logo: (
+              <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
+                WK
+              </div>
+            ),
+          }}
+          items={navItems}
+          footer={
+            <div className="space-y-2">
+              <a href="/teacher/sessions" onClick={() => setMobileMenuOpen(false)}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="w-full justify-start text-xs font-semibold min-h-[44px]"
+                  leftIcon={<Plus className="w-4 h-4" />}
+                >
+                  Mulai Sesi Baru
+                </Button>
+              </a>
+              <p className="text-[10px] text-slate-500 text-center">WaliKelas Teaching Tools V1</p>
+            </div>
+          }
+        />
+      </MobileDrawer>
+
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
         <Topbar
@@ -179,22 +180,22 @@ export default function TeacherLayout({ children }: { children?: any }) {
                 <button
                   type="button"
                   onClick={() => setClassDropdownOpen(!classDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium bg-secondary hover:bg-secondary/80 border border-border text-foreground transition-colors min-h-[40px] sm:min-h-[36px]"
                 >
                   <BookOpen className="w-3.5 h-3.5 text-blue-600" />
                   <span className="truncate max-w-[120px] sm:max-w-[160px]">
                     {activeClassroom ? activeClassroom.name : 'Pilih Kelas Aktif'}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
                 </button>
 
                 {classDropdownOpen && (
-                  <div className="absolute right-0 mt-1.5 w-60 rounded-xl bg-white border border-slate-200 shadow-lg py-1.5 z-40">
-                    <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                  <div className="absolute right-0 mt-1.5 w-60 rounded-xl bg-card border border-border shadow-lg py-1.5 z-40">
+                    <div className="px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
                       Konteks Kelas Aktif
                     </div>
                     {classrooms.length === 0 ? (
-                      <div className="p-3 text-xs text-slate-500 text-center">Belum ada kelas.</div>
+                      <div className="p-3 text-xs text-muted-foreground text-center">Belum ada kelas.</div>
                     ) : (
                       classrooms.map((c) => (
                         <button
@@ -204,14 +205,14 @@ export default function TeacherLayout({ children }: { children?: any }) {
                             setActiveClassroom(c);
                             setClassDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 transition-colors ${
+                          className={`w-full text-left px-3 py-2.5 text-xs flex items-center justify-between hover:bg-muted transition-colors min-h-[44px] ${
                             activeClassroom?.id === c.id
-                              ? 'font-bold text-blue-600 bg-blue-50/50'
-                              : 'text-slate-700'
+                              ? 'font-bold text-blue-600 bg-blue-50/50 dark:bg-blue-950/30'
+                              : 'text-foreground'
                           }`}
                         >
                           <span className="truncate">{c.name}</span>
-                          {c.grade && <span className="text-[10px] text-slate-400">{c.grade}</span>}
+                          {c.grade && <span className="text-[10px] text-muted-foreground">{c.grade}</span>}
                         </button>
                       ))
                     )}
@@ -259,7 +260,7 @@ export default function TeacherLayout({ children }: { children?: any }) {
           }
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">{children}</main>
+        <main id="main-content" tabIndex={-1} className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto focus:outline-none">{children}</main>
       </div>
 
       {/* Mobile Bottom Navigation */}

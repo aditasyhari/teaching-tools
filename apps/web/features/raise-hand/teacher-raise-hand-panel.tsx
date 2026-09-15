@@ -2,7 +2,14 @@
 
 import React, { useEffect } from 'react';
 import { Hand, X, Mic, CheckCircle2, Clock, Volume2, UserCheck } from 'lucide-react';
-import { Button } from '@walikelas/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@walikelas/ui';
 import type { RaisedHandItem } from '@walikelas/types';
 
 interface TeacherRaiseHandPanelProps {
@@ -52,68 +59,56 @@ export function TeacherRaiseHandPanel({
   const hasAnyActive = queue.length > 0 || currentSpeaker !== null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="raise-hand-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
-    >
-      <div className="relative flex h-[90vh] max-h-[700px] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] h-[700px] overflow-hidden flex flex-col p-0 gap-0">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+        <DialogHeader className="flex flex-row items-center justify-between border-b border-[#e8e4dc] px-6 py-4 space-y-0 text-left bg-stone-50/60">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 border border-amber-200/60 text-amber-600 shrink-0">
               <Hand className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 id="raise-hand-dialog-title" className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <DialogTitle className="text-lg font-bold text-stone-900">
                   Antrean Angkat Tangan
-                </h2>
+                </DialogTitle>
                 {raisedCount > 0 && (
-                  <span className="inline-flex items-center rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-semibold text-white">
+                  <span className="inline-flex items-center rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-stone-950">
                     {raisedCount} menunggu
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <DialogDescription className="text-xs text-stone-500">
                 Kelola giliran berbicara peserta kelas secara tertib dan realtime
-              </p>
+              </DialogDescription>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pr-6">
             {hasAnyActive && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onLowerAll}
-                className="text-xs text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40"
+                className="text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
               >
                 Turunkan Semua
               </Button>
             )}
-            <button
-              onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
-              aria-label="Tutup panel"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
-        </div>
+        </DialogHeader>
 
         {/* Content Container */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Current Speaker Section */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">
               Giliran Berbicara Aktif
             </h3>
             {currentSpeaker ? (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-800/80 dark:bg-emerald-950/30 transition-all">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-emerald-300 bg-emerald-50/70 p-4 transition-all">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                  <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
                     <Mic className="h-6 w-6 animate-pulse" />
                     <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
@@ -122,14 +117,14 @@ export function TeacherRaiseHandPanel({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      <span className="text-base font-bold text-stone-900">
                         {currentSpeaker.displayName}
                       </span>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-200/80 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
                         <Volume2 className="h-3 w-3" /> Sedang Berbicara
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5">
                       <Clock className="h-3 w-3" />
                       <span>Dimulai {formatElapsed(currentSpeaker.speakingAt)}</span>
                     </div>
@@ -140,15 +135,15 @@ export function TeacherRaiseHandPanel({
                   variant="outline"
                   size="sm"
                   onClick={() => onLowerParticipant(currentSpeaker.id)}
-                  className="shrink-0 border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
+                  className="shrink-0 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
                 >
-                  <CheckCircle2 className="h-4 w-4 mr-1.5 text-emerald-600 dark:text-emerald-400" />
+                  <CheckCircle2 className="h-4 w-4 mr-1.5 text-emerald-600" />
                   Selesai Berbicara
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-4 text-slate-500 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
-                <Mic className="h-5 w-5 text-slate-400 opacity-50" />
+              <div className="flex items-center gap-3 rounded-xl border border-dashed border-[#e8e4dc] bg-stone-50/50 p-4 text-stone-500">
+                <Mic className="h-5 w-5 text-stone-400 opacity-50" />
                 <span className="text-sm">Belum ada peserta yang sedang berbicara</span>
               </div>
             )}
@@ -157,25 +152,25 @@ export function TeacherRaiseHandPanel({
           {/* Queue Section */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500">
                 Daftar Antrean Angkat Tangan ({queue.length})
               </h3>
               {queue.length > 1 && (
-                <span className="text-xs text-slate-400 dark:text-slate-500">
+                <span className="text-xs text-stone-500">
                   Urutan sesuai waktu tercepat mengangkat tangan
                 </span>
               )}
             </div>
 
             {queue.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 py-10 text-center dark:border-slate-800">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 mb-3">
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#e8e4dc] py-10 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-100 text-stone-400 mb-3">
                   <Hand className="h-6 w-6" />
                 </div>
-                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <h4 className="text-sm font-bold text-stone-800">
                   Tidak ada antrean angkat tangan
                 </h4>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm">
+                <p className="mt-1 text-xs text-stone-500 max-w-sm">
                   Peserta dapat menekan tombol &quot;Angkat Tangan&quot; dari perangkat mereka untuk
                   meminta giliran berbicara.
                 </p>
@@ -188,29 +183,29 @@ export function TeacherRaiseHandPanel({
                   return (
                     <div
                       key={item.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition-all hover:border-slate-300 dark:border-slate-800 dark:bg-slate-850 dark:hover:border-slate-700"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-[#e8e4dc] bg-white p-3.5 shadow-xs transition-all hover:border-amber-300"
                     >
                       {/* Participant info with queue order number */}
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-sm font-bold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-xs font-black text-amber-900 border border-amber-200/60">
                           #{index + 1}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            <span className="text-sm font-bold text-stone-900">
                               {item.displayName}
                             </span>
                             {isAcknowledged ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-800 border border-sky-200">
                                 <UserCheck className="h-3 w-3" /> Dilihat Guru
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-200/60">
                                 <Hand className="h-3 w-3" /> Menunggu
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
+                          <div className="flex items-center gap-1.5 text-xs text-stone-400 mt-0.5">
                             <Clock className="h-3 w-3" />
                             <span>Mengangkat tangan {formatElapsed(item.raisedAt)}</span>
                           </div>
@@ -224,9 +219,9 @@ export function TeacherRaiseHandPanel({
                             variant="ghost"
                             size="sm"
                             onClick={() => onAcknowledge(item.id)}
-                            className="text-xs text-slate-600 hover:text-slate-900 dark:text-slate-300"
+                            className="text-xs text-stone-600 hover:text-stone-900"
                           >
-                            <UserCheck className="h-3.5 w-3.5 mr-1 text-sky-600 dark:text-sky-400" />
+                            <UserCheck className="h-3.5 w-3.5 mr-1 text-sky-600" />
                             Lihat
                           </Button>
                         )}
@@ -241,7 +236,7 @@ export function TeacherRaiseHandPanel({
                               ? 'Selesaikan giliran berbicara yang aktif terlebih dahulu'
                               : 'Beri giliran berbicara'
                           }
-                          className="text-xs"
+                          className="text-xs font-bold"
                         >
                           <Mic className="h-3.5 w-3.5 mr-1" />
                           Beri Giliran
@@ -251,7 +246,7 @@ export function TeacherRaiseHandPanel({
                           variant="ghost"
                           size="sm"
                           onClick={() => onLowerParticipant(item.id)}
-                          className="text-xs text-slate-400 hover:text-red-600 dark:hover:text-red-400"
+                          className="text-xs text-stone-400 hover:text-rose-600"
                           aria-label="Turunkan tangan"
                         >
                           <X className="h-3.5 w-3.5" />
@@ -275,7 +270,7 @@ export function TeacherRaiseHandPanel({
             Tutup
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

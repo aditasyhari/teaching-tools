@@ -86,21 +86,21 @@ export function ParticipantRaiseHandView({
 
       {/* Active State View: SPEAKING */}
       {isSpeaking && (
-        <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-500 bg-gradient-to-b from-emerald-50 to-white p-6 text-center shadow-lg dark:from-emerald-950/40 dark:to-slate-900 dark:border-emerald-600">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shadow-emerald-500/30 mb-4 animate-bounce">
-            <Mic className="h-10 w-10" />
+        <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-500 bg-emerald-50 p-6 text-center shadow-xs">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm mb-4 motion-safe:animate-pulse ring-4 ring-emerald-200/80">
+            <Mic className="h-8 w-8" />
           </div>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 mb-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900 border border-emerald-200 mb-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 motion-safe:animate-ping" />
             Sedang Berbicara
           </div>
-          <h3 className="text-xl font-extrabold text-slate-900 dark:text-slate-100">
+          <h3 className="text-xl font-extrabold text-stone-900">
             Giliran Anda Berbicara!
           </h3>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 max-w-xs mx-auto">
+          <p className="mt-2 text-sm text-stone-600 max-w-xs mx-auto">
             Silakan berbicara dengan jelas kepada guru dan kelas sekarang.
           </p>
-          <div className="mt-4 text-xs text-slate-400 dark:text-slate-500">
+          <div className="mt-4 text-xs text-stone-500">
             Guru akan menyelesaikan giliran Anda setelah selesai.
           </div>
         </div>
@@ -108,22 +108,22 @@ export function ParticipantRaiseHandView({
 
       {/* Active State View: ACKNOWLEDGED (Seen by teacher) */}
       {isAcknowledged && (
-        <div className="rounded-2xl border border-sky-300 bg-sky-50/70 p-6 text-center dark:border-sky-800 dark:bg-sky-950/30">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-sm mb-3">
-            <UserCheck className="h-8 w-8" />
+        <div className="rounded-2xl border border-sky-200 bg-sky-50/70 p-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-xs mb-3">
+            <UserCheck className="h-7 w-7" />
           </div>
-          <div className="inline-flex items-center gap-1 rounded-full bg-sky-200/80 px-3 py-1 text-xs font-semibold text-sky-800 dark:bg-sky-900/60 dark:text-sky-300 mb-2">
+          <div className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-800 border border-sky-200 mb-2">
             <CheckCircle2 className="h-3.5 w-3.5" /> Dilihat Guru
           </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          <h3 className="text-lg font-bold text-stone-900">
             Guru Telah Melihat Tangan Anda
           </h3>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+          <p className="mt-1 text-xs text-stone-600">
             Harap bersiap, giliran Anda akan segera diberikan oleh guru.
           </p>
 
           {queuePosition !== null && (
-            <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 shadow-sm border border-sky-200 dark:bg-slate-900 dark:border-sky-900 dark:text-sky-300">
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-sky-800 shadow-xs border border-sky-200">
               <Clock className="h-3.5 w-3.5" />
               Posisi Antrean: #{queuePosition} dari {totalRaisedCount}
             </div>
@@ -135,7 +135,7 @@ export function ParticipantRaiseHandView({
               size="sm"
               disabled={cooldown > 0 || isLoading}
               onClick={onLowerHand}
-              className="text-xs border-slate-300 text-slate-600 hover:text-red-600 hover:border-red-300 dark:border-slate-700 dark:text-slate-400"
+              className="text-xs text-stone-600 hover:text-rose-600 border-[#e8e4dc]"
             >
               {cooldown > 0 ? `Tunggu (${cooldown}s)` : 'Batalkan / Turunkan Tangan'}
             </Button>
@@ -145,22 +145,22 @@ export function ParticipantRaiseHandView({
 
       {/* Active State View: RAISED (Waiting in queue) */}
       {isRaised && (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50/70 p-6 text-center dark:border-amber-800 dark:bg-amber-950/30">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm mb-3">
-            <Hand className="h-8 w-8 animate-pulse" />
+        <div className="rounded-2xl border border-amber-300 bg-amber-50/70 p-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500 text-stone-950 font-bold shadow-xs mb-3">
+            <Hand className="h-7 w-7 motion-safe:animate-pulse" />
           </div>
-          <div className="inline-flex items-center gap-1 rounded-full bg-amber-200/80 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 mb-2">
+          <div className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 border border-amber-200/60 mb-2">
             <Clock className="h-3.5 w-3.5" /> Sedang Mengantre
           </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          <h3 className="text-lg font-bold text-stone-900">
             Tangan Anda Sedang Terangkat
           </h3>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+          <p className="mt-1 text-xs text-stone-600">
             Menunggu guru melihat dan memberikan giliran berbicara.
           </p>
 
           {queuePosition !== null && (
-            <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm border border-amber-200 dark:bg-slate-900 dark:border-amber-900 dark:text-amber-300">
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-amber-900 shadow-xs border border-amber-200">
               <Clock className="h-3.5 w-3.5" />
               Posisi Antrean: #{queuePosition} dari {totalRaisedCount}
             </div>
@@ -172,7 +172,7 @@ export function ParticipantRaiseHandView({
               size="sm"
               disabled={cooldown > 0 || isLoading}
               onClick={onLowerHand}
-              className="text-xs border-slate-300 text-slate-600 hover:text-red-600 hover:border-red-300 dark:border-slate-700 dark:text-slate-400"
+              className="text-xs text-stone-600 hover:text-rose-600 border-[#e8e4dc]"
             >
               {cooldown > 0 ? `Tunggu (${cooldown}s)` : 'Batalkan / Turunkan Tangan'}
             </Button>
@@ -182,14 +182,14 @@ export function ParticipantRaiseHandView({
 
       {/* Inactive State: Raise Hand Action Button */}
       {!hasRaised && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 mb-3">
+        <div className="rounded-2xl border border-[#e8e4dc] bg-white p-6 text-center shadow-xs">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 border border-amber-200/60 text-amber-600 mb-3">
             <Hand className="h-7 w-7" />
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+          <h3 className="text-base font-bold text-stone-900">
             Ingin Berbicara atau Bertanya?
           </h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+          <p className="mt-1 text-xs text-stone-600 max-w-xs mx-auto">
             Tekan tombol di bawah untuk meminta giliran berbicara secara tertib.
           </p>
 
@@ -199,7 +199,7 @@ export function ParticipantRaiseHandView({
               size="lg"
               disabled={cooldown > 0 || isLoading}
               onClick={onRaiseHand}
-              className="w-full py-4 text-base font-bold shadow-md shadow-amber-500/20 bg-amber-500 hover:bg-amber-600 text-white border-none"
+              className="w-full min-h-[52px] text-base font-bold bg-amber-500 hover:bg-amber-600 text-stone-950 border-none shadow-xs"
             >
               <Hand className="h-5 w-5 mr-2" />
               {cooldown > 0 ? `Tunggu (${cooldown}s)` : 'Angkat Tangan'}
@@ -207,7 +207,7 @@ export function ParticipantRaiseHandView({
           </div>
 
           {totalRaisedCount > 0 && (
-            <div className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+            <div className="mt-3 text-xs text-stone-500">
               Saat ini ada {totalRaisedCount} siswa lain dalam antrean
             </div>
           )}

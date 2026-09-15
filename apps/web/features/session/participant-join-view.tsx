@@ -123,6 +123,16 @@ export function ParticipantJoinView({
       // First verify code via REST API
       await verifyJoinCode(apiClient, code);
       if (typeof window !== 'undefined') {
+        const stored = sessionStorage.getItem('wk_participant_session');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed.code && parsed.code.toUpperCase() !== code.trim().toUpperCase()) {
+              sessionStorage.removeItem('wk_participant_id');
+              sessionStorage.removeItem('wk_reconnect_token');
+            }
+          } catch {}
+        }
         sessionStorage.setItem(
           'wk_participant_session',
           JSON.stringify({ code: code.trim().toUpperCase(), displayName: displayName.trim() }),
@@ -304,8 +314,8 @@ export function ParticipantJoinView({
   // If not yet joined, render the Join Form
   if (!joined) {
     return (
-      <div className="min-h-[80vh] flex flex-col justify-center items-center px-4 py-8">
-        <div className="w-full max-w-md bg-white border border-[#e8e4dc] rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+      <main id="main-content" tabIndex={-1} className="min-h-[80vh] flex flex-col justify-center items-center px-4 py-8 focus:outline-none">
+        <div className="w-full max-w-md bg-white border border-[#e8e4dc] rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="text-center space-y-2">
             <div className="w-12 h-12 rounded-2xl bg-amber-500 text-stone-950 flex items-center justify-center mx-auto shadow-xs ring-4 ring-amber-100">
               <Sparkles className="w-6 h-6" />
@@ -385,7 +395,7 @@ export function ParticipantJoinView({
             </Link>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -395,18 +405,18 @@ export function ParticipantJoinView({
   const isEnded = snapshot?.status === 'ENDED';
 
   return (
-    <div className="min-h-[85vh] flex flex-col justify-between max-w-xl mx-auto px-4 py-6">
+    <main id="main-content" tabIndex={-1} className="min-h-[85vh] flex flex-col justify-between max-w-xl mx-auto px-4 py-5 focus:outline-none">
       {/* Top Participant Navigation Bar */}
-      <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-sm flex items-center justify-center">
+      <div className="flex items-center justify-between pb-3.5 border-b border-[#e8e4dc]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-amber-500 text-stone-950 font-bold text-xs flex items-center justify-center shadow-xs">
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div>
-            <div className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">
+            <div className="text-sm font-bold text-stone-900 leading-tight">
               {displayName}
             </div>
-            <div className="text-xs text-slate-500">Kode: {code}</div>
+            <div className="text-xs text-stone-500">Kode: {code}</div>
           </div>
         </div>
 
@@ -415,10 +425,10 @@ export function ParticipantJoinView({
           <div
             className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
               connectionStatus === 'CONNECTED'
-                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 : connectionStatus === 'RECONNECTING'
-                  ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800 animate-pulse'
-                  : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse'
+                  : 'bg-rose-50 text-rose-700 border border-rose-200'
             }`}
           >
             {connectionStatus === 'CONNECTED' ? (
@@ -435,8 +445,9 @@ export function ParticipantJoinView({
             variant="ghost"
             size="sm"
             onClick={handleLeave}
-            leftIcon={<LogOut className="w-3.5 h-3.5" />}
+            leftIcon={<LogOut className="w-3.5 h-3.5 text-stone-500" />}
             title="Keluar dari sesi"
+            className="text-stone-600 hover:text-rose-600"
           >
             Keluar
           </Button>
@@ -444,29 +455,90 @@ export function ParticipantJoinView({
       </div>
 
       {/* Main Body per Status */}
-      <div className="my-auto py-8">
+      <div className="my-auto py-6">
+        {/* Connecting or Error State before Initial Snapshot */}
+        {!snapshot && (
+          <div className="text-center space-y-5 bg-white border border-[#e8e4dc] rounded-3xl p-8 shadow-xs max-w-md mx-auto">
+            {socketError ? (
+              <>
+                <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-600 flex items-center justify-center mx-auto shadow-2xs">
+                  <AlertCircle className="w-7 h-7" />
+                </div>
+                <div className="space-y-2">
+                  <Badge variant="destructive">Koneksi Gagal</Badge>
+                  <h2 className="text-xl font-black text-stone-900">
+                    Gagal Terhubung ke Sesi
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                    {socketError}
+                  </p>
+                </div>
+                <div className="pt-2 flex flex-col gap-2">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    className="w-full justify-center"
+                    onClick={() => {
+                      leaveSession();
+                      setJoined(false);
+                      setFormError(socketError);
+                    }}
+                  >
+                    Kembali ke Form Masuk
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-700 flex items-center justify-center mx-auto shadow-2xs">
+                  <Clock className="w-7 h-7 animate-spin text-amber-600" />
+                </div>
+                <div className="space-y-2">
+                  <Badge variant="neutral">Menyambungkan</Badge>
+                  <h2 className="text-xl font-black text-stone-900">
+                    Menghubungkan ke Ruang Kelas...
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-600">
+                    Menyiapkan ruang kelas untuk kode <span className="font-mono font-bold text-stone-900">{code}</span>. Mohon tunggu sebentar.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full justify-center text-xs"
+                    onClick={handleLeave}
+                  >
+                    Batal & Keluar
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {isWaiting && (
-          <div className="text-center space-y-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm">
-            <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto animate-pulse">
-              <Clock className="w-8 h-8" />
+          <div className="text-center space-y-5 bg-white border border-[#e8e4dc] rounded-3xl p-8 shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200/60 text-amber-600 flex items-center justify-center mx-auto">
+              <Clock className="w-7 h-7 animate-pulse" />
             </div>
 
             <div className="space-y-2">
               <Badge variant="warning">Ruang Tunggu</Badge>
-              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
+              <h2 className="text-2xl font-black text-stone-900">
                 Menunggu Guru Memulai Sesi
               </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
+              <p className="text-sm text-stone-600 max-w-sm mx-auto">
                 Anda sudah terhubung ke sesi{' '}
-                <span className="font-semibold text-slate-900 dark:text-slate-200">
+                <span className="font-semibold text-stone-900">
                   {snapshot?.title || 'Kelas'}
                 </span>
                 . Tetap di halaman ini, aktivitas akan dimulai sebentar lagi.
               </p>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-2 text-xs text-slate-500">
-              <Users className="w-4 h-4 text-indigo-500" />
+            <div className="pt-4 border-t border-[#e8e4dc] flex items-center justify-center gap-2 text-xs text-stone-500">
+              <Users className="w-4 h-4 text-amber-600" />
               <span>{snapshot?.participantCount ?? 1} murid sedang bersiap</span>
             </div>
           </div>
@@ -474,45 +546,45 @@ export function ParticipantJoinView({
 
         {isActive && (
           <div className="space-y-4">
-            {/* Tab switch buttons */}
-            <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
+            {/* Mobile-first Segmented Dock */}
+            <div className="flex items-center justify-between gap-1 p-1 bg-stone-100 rounded-2xl border border-[#e8e4dc] overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setViewMode('ACTIVITY')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                   viewMode === 'ACTIVITY'
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                    ? 'bg-white text-stone-900 shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Aktivitas Kelas</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden xs:inline">Aktivitas</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setViewMode('RAISE_HAND')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all relative ${
                   viewMode === 'RAISE_HAND'
-                    ? 'bg-amber-500 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                    ? 'bg-white text-stone-900 shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
                 }`}
               >
-                <Hand className="w-3.5 h-3.5" />
-                <span>Angkat Tangan</span>
+                <Hand className="w-3.5 h-3.5 text-amber-600" />
+                <span className="hidden xs:inline">Angkat</span>
                 {myHand?.status === 'SPEAKING' && (
-                  <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-600 text-white px-1.5 py-0.2 text-[10px] font-bold animate-pulse">
-                    <Mic className="w-2.5 h-2.5" /> Bicara
+                  <span className="inline-flex items-center rounded-full bg-emerald-600 text-white px-1 py-0.2 text-[9px] font-bold animate-pulse">
+                    <Mic className="w-2.5 h-2.5" />
                   </span>
                 )}
                 {(myHand?.status === 'RAISED' || myHand?.status === 'ACKNOWLEDGED') &&
                   queuePosition !== null && (
-                    <span className="rounded-full bg-black/15 px-1.5 py-0.2 text-[10px] font-bold dark:bg-white/25">
+                    <span className="rounded-full bg-amber-100 text-amber-900 px-1.5 py-0.2 text-[10px] font-bold border border-amber-200/60">
                       #{queuePosition}
                     </span>
                   )}
                 {!myHand && totalRaisedCount > 0 && (
-                  <span className="rounded-full bg-black/15 px-1.5 py-0.2 text-[10px] font-bold dark:bg-white/25">
+                  <span className="rounded-full bg-stone-200 text-stone-700 px-1.5 py-0.2 text-[10px] font-bold">
                     {totalRaisedCount}
                   </span>
                 )}
@@ -521,63 +593,63 @@ export function ParticipantJoinView({
               <button
                 type="button"
                 onClick={() => setViewMode('QUESTIONS')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all relative ${
                   viewMode === 'QUESTIONS'
-                    ? 'bg-amber-500 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                    ? 'bg-white text-stone-900 shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
                 }`}
               >
-                <HelpCircle className="w-3.5 h-3.5" />
-                <span>Tanya Guru</span>
+                <HelpCircle className="w-3.5 h-3.5 text-blue-600" />
+                <span className="hidden xs:inline">Tanya</span>
                 {myQuestions.length > 0 && (
-                  <span className="rounded-full bg-black/15 px-1.5 py-0.2 text-[10px] dark:bg-white/25">
+                  <span className="rounded-full bg-stone-200 text-stone-700 px-1.5 py-0.2 text-[10px] font-semibold">
                     {myQuestions.length}
                   </span>
                 )}
                 {highlightedQuestion && viewMode !== 'QUESTIONS' && (
-                  <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
                 )}
               </button>
 
               <button
                 type="button"
                 onClick={() => setViewMode('BRAINSTORM')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all relative ${
                   viewMode === 'BRAINSTORM'
-                    ? 'bg-violet-600 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                    ? 'bg-white text-stone-900 shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
                 }`}
               >
-                <Lightbulb className="w-3.5 h-3.5" />
-                <span>Papan Ide</span>
+                <Lightbulb className="w-3.5 h-3.5 text-violet-600" />
+                <span className="hidden xs:inline">Ide</span>
                 {bsMyIdeas.length > 0 && (
-                  <span className="rounded-full bg-black/15 px-1.5 py-0.2 text-[10px] dark:bg-white/25">
+                  <span className="rounded-full bg-stone-200 text-stone-700 px-1.5 py-0.2 text-[10px] font-semibold">
                     {bsMyIdeas.length}
                   </span>
                 )}
                 {bsActivity && bsActivity.status === 'OPEN' && viewMode !== 'BRAINSTORM' && (
-                  <span className="h-2 w-2 rounded-full bg-violet-400 animate-ping" />
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
                 )}
               </button>
 
               <button
                 type="button"
                 onClick={() => setViewMode('EXIT_TICKET')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all relative ${
                   viewMode === 'EXIT_TICKET'
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                    ? 'bg-white text-stone-900 shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
                 }`}
               >
-                <ClipboardCheck className="w-3.5 h-3.5" />
-                <span>Tiket Keluar</span>
+                <ClipboardCheck className="w-3.5 h-3.5 text-teal-600" />
+                <span className="hidden xs:inline">Refleksi</span>
                 {etActivity &&
                   etActivity.status === 'OPEN' &&
                   !etHasSubmitted &&
                   viewMode !== 'EXIT_TICKET' && (
-                    <span className="h-2 w-2 rounded-full bg-indigo-500 animate-ping" />
+                    <span className="h-2 w-2 rounded-full bg-teal-500 animate-ping" />
                   )}
-                {etHasSubmitted && <Check className="w-3 h-3 text-emerald-500" />}
+                {etHasSubmitted && <Check className="w-3 h-3 text-emerald-600" />}
               </button>
             </div>
 
@@ -596,15 +668,15 @@ export function ParticipantJoinView({
               <button
                 type="button"
                 onClick={() => setViewMode('RAISE_HAND')}
-                className="w-full text-left mb-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50/90 p-3.5 shadow-sm hover:bg-emerald-100 transition-colors dark:border-emerald-500/80 dark:bg-emerald-950/40 animate-pulse"
+                className="w-full text-left mb-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50 p-3.5 shadow-xs hover:bg-emerald-100/80 transition-colors animate-pulse"
               >
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Mic className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                  <Mic className="w-3.5 h-3.5 text-emerald-700" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
                     Giliran Anda Berbicara!
                   </span>
                 </div>
-                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                <p className="text-xs font-bold text-stone-900">
                   Silakan berbicara sekarang. Buka tab Angkat Tangan &rarr;
                 </p>
               </button>
@@ -615,16 +687,16 @@ export function ParticipantJoinView({
               <button
                 type="button"
                 onClick={() => setViewMode('EXIT_TICKET')}
-                className="w-full text-left mb-3 rounded-2xl border-2 border-indigo-500 bg-indigo-50/90 p-3.5 shadow-sm hover:bg-indigo-100 transition-colors dark:border-indigo-500/80 dark:bg-indigo-950/40 animate-pulse"
+                className="w-full text-left mb-3 rounded-2xl border-2 border-teal-500 bg-teal-50 p-3.5 shadow-xs hover:bg-teal-100/80 transition-colors animate-pulse"
               >
                 <div className="flex items-center gap-1.5 mb-1">
-                  <ClipboardCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-800 dark:text-indigo-300">
+                  <ClipboardCheck className="w-3.5 h-3.5 text-teal-700" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-teal-800">
                     Tiket Keluar Telah Dibuka Guru!
                   </span>
                 </div>
-                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                  {etActivity.title || 'Isi refleksi pembelajaran sekarang'}. Buka tab Tiket Keluar
+                <p className="text-xs font-bold text-stone-900">
+                  {etActivity.title || 'Isi refleksi pembelajaran sekarang'}. Buka tab Refleksi
                   &rarr;
                 </p>
               </button>
@@ -804,6 +876,6 @@ export function ParticipantJoinView({
       <div className="text-center text-xs text-slate-400">
         WaliKelas Teaching Tools • Realtime Classroom
       </div>
-    </div>
+    </main>
   );
 }

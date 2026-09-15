@@ -23,7 +23,7 @@ export function Topbar({
   return (
     <header
       className={cn(
-        'h-16 px-4 sm:px-6 bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-20 flex items-center justify-between gap-4',
+        'h-16 px-4 sm:px-6 bg-card/95 backdrop-blur-sm border-b border-border sticky top-0 z-20 flex items-center justify-between gap-4',
         className,
       )}
     >
@@ -35,17 +35,22 @@ export function Topbar({
             variant="ghost"
             size="md"
             onClick={onMenuToggle}
-            className="md:hidden text-slate-600 hover:text-slate-900"
+            className="md:hidden text-foreground hover:text-foreground/80 min-h-[44px] min-w-[44px] shrink-0"
           />
         )}
         {breadcrumbs ? (
-          <div className="hidden sm:block">{breadcrumbs}</div>
+          <>
+            <div className="hidden sm:block">{breadcrumbs}</div>
+            {title && (
+              <h1 className="text-base font-semibold text-foreground truncate sm:hidden">{title}</h1>
+            )}
+          </>
         ) : title ? (
-          <h1 className="text-lg font-semibold text-slate-900 truncate">{title}</h1>
+          <h1 className="text-lg font-semibold text-foreground truncate">{title}</h1>
         ) : null}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 shrink-0">
         {actions && <div className="flex items-center gap-2">{actions}</div>}
         {userMenu && <div className="shrink-0">{userMenu}</div>}
       </div>

@@ -1,8 +1,15 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { HelpCircle, X, Sparkles, CheckCircle2, EyeOff, User, Clock, Search } from 'lucide-react';
-import { Button } from '@walikelas/ui';
+import { HelpCircle, Sparkles, CheckCircle2, EyeOff, User, Clock, Search } from 'lucide-react';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@walikelas/ui';
 import type { QuestionBoxItem } from '@walikelas/types';
 
 interface TeacherQuestionBoxPanelProps {
@@ -83,96 +90,85 @@ export function TeacherQuestionBoxPanel({
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="question-box-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
-    >
-      <div className="relative flex h-[90vh] max-h-[750px] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] h-[750px] overflow-hidden flex flex-col p-0 gap-0">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+        <DialogHeader className="border-b border-[#e8e4dc] px-6 py-4 text-left bg-stone-50/60">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 border border-amber-200/60 text-amber-600 shrink-0">
               <HelpCircle className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 id="question-box-dialog-title" className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <DialogTitle className="text-lg font-bold text-stone-900">
                   Kotak Pertanyaan Kelas
-                </h2>
+                </DialogTitle>
                 {pendingCount > 0 && (
-                  <span className="inline-flex items-center rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">
+                  <span className="inline-flex items-center rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-stone-950">
                     {pendingCount} baru
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <DialogDescription className="text-xs text-stone-500">
                 Kelola pertanyaan peserta dan sorot ke layar proyektor
-              </p>
+              </DialogDescription>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        </DialogHeader>
 
         {/* Stats & Tabs Bar */}
-        <div className="border-b border-slate-200 bg-slate-50 px-6 py-3 dark:border-slate-800 dark:bg-slate-950/40">
+        <div className="border-b border-[#e8e4dc] bg-white px-6 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Tabs */}
             <div className="flex items-center gap-1.5 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('PENDING')}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                   activeTab === 'PENDING'
-                    ? 'bg-amber-500 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800'
+                    ? 'bg-amber-500 text-stone-950 shadow-xs'
+                    : 'text-stone-600 hover:bg-stone-100'
                 }`}
               >
                 <span>Menunggu</span>
-                <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] font-semibold dark:bg-white/20">
+                <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] font-bold">
                   {pendingCount}
                 </span>
               </button>
 
               <button
                 onClick={() => setActiveTab('ALL')}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                   activeTab === 'ALL'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800'
+                    ? 'bg-stone-900 text-white shadow-xs'
+                    : 'text-stone-600 hover:bg-stone-100'
                 }`}
               >
                 <span>Semua</span>
-                <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] font-semibold dark:bg-white/20">
+                <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] font-bold">
                   {totalCount}
                 </span>
               </button>
 
               <button
                 onClick={() => setActiveTab('ANSWERED')}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                   activeTab === 'ANSWERED'
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-stone-600 hover:bg-stone-100'
                 }`}
               >
                 <span>Terjawab</span>
-                <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] font-semibold dark:bg-white/20">
+                <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] font-bold">
                   {answeredCount}
                 </span>
               </button>
 
               <button
                 onClick={() => setActiveTab('DISMISSED')}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                   activeTab === 'DISMISSED'
-                    ? 'bg-slate-700 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800'
+                    ? 'bg-stone-600 text-white shadow-xs'
+                    : 'text-stone-600 hover:bg-stone-100'
                 }`}
               >
                 <span>Diabaikan</span>
@@ -181,13 +177,13 @@ export function TeacherQuestionBoxPanel({
 
             {/* Search */}
             <div className="relative w-full sm:w-56">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
               <input
                 type="text"
                 placeholder="Cari pertanyaan..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-[#e8e4dc] bg-white py-1.5 pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
             </div>
           </div>
@@ -221,48 +217,48 @@ export function TeacherQuestionBoxPanel({
                   key={q.id}
                   className={`relative rounded-xl border p-4 transition-all ${
                     isHighlighted
-                      ? 'border-amber-400 bg-amber-50/50 shadow-md dark:border-amber-500/60 dark:bg-amber-950/20'
+                      ? 'border-amber-400 bg-amber-50/50 shadow-xs'
                       : q.status === 'ANSWERED'
-                        ? 'border-slate-200 bg-slate-50/60 opacity-80 dark:border-slate-800 dark:bg-slate-950/20'
+                        ? 'border-[#e8e4dc] bg-stone-50/60 opacity-80'
                         : q.status === 'DISMISSED'
-                          ? 'border-slate-200 bg-slate-100/50 opacity-50 dark:border-slate-800 dark:bg-slate-950/40'
-                          : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'
+                          ? 'border-[#e8e4dc] bg-stone-100/50 opacity-50'
+                          : 'border-[#e8e4dc] bg-white hover:border-amber-300'
                   }`}
                 >
                   {/* Card Header */}
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-100 text-stone-700">
                         <User className="h-3.5 w-3.5" />
                       </div>
-                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      <span className="text-xs font-bold text-stone-900">
                         {q.isAnonymous ? 'Anonim' : q.authorName}
                       </span>
                       {q.isAnonymous && (
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500 dark:bg-slate-800">
+                        <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">
                           Dirahasiakan
                         </span>
                       )}
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                      <span className="flex items-center gap-1 text-[10px] text-stone-400">
                         <Clock className="h-3 w-3" />
                         {formatTimestamp(q.createdAt)}
                       </span>
 
                       {isHighlighted ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider animate-pulse">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-stone-950 uppercase tracking-wider animate-pulse">
                           <Sparkles className="h-2.5 w-2.5" />
                           Di Layar
                         </span>
                       ) : q.status === 'ANSWERED' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
                           <CheckCircle2 className="h-2.5 w-2.5" />
                           Terjawab
                         </span>
                       ) : q.status === 'DISMISSED' ? (
-                        <span className="inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                        <span className="inline-flex items-center rounded-full bg-stone-200 px-2 py-0.5 text-[10px] font-medium text-stone-600">
                           Diabaikan
                         </span>
                       ) : null}
@@ -270,12 +266,12 @@ export function TeacherQuestionBoxPanel({
                   </div>
 
                   {/* Card Body */}
-                  <p className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
+                  <p className="text-sm text-stone-800 whitespace-pre-wrap leading-relaxed">
                     {q.content}
                   </p>
 
                   {/* Card Actions */}
-                  <div className="mt-3 flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                  <div className="mt-3 flex items-center justify-end gap-2 pt-2 border-t border-[#e8e4dc]">
                     {isHighlighted ? (
                       <Button
                         size="sm"
@@ -290,7 +286,7 @@ export function TeacherQuestionBoxPanel({
                         size="sm"
                         variant="primary"
                         onClick={() => onHighlight(q.id)}
-                        className="text-xs h-7 px-2.5 bg-amber-500 hover:bg-amber-600 text-white"
+                        className="text-xs h-7 px-2.5 bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold"
                       >
                         <Sparkles className="mr-1 h-3 w-3" />
                         Sorot ke Layar
@@ -302,9 +298,9 @@ export function TeacherQuestionBoxPanel({
                         size="sm"
                         variant="secondary"
                         onClick={() => onAnswer(q.id)}
-                        className="text-xs h-7 px-2.5 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                        className="text-xs h-7 px-2.5 text-emerald-800 hover:bg-emerald-50 border border-emerald-200"
                       >
-                        <CheckCircle2 className="mr-1 h-3 w-3" />
+                        <CheckCircle2 className="mr-1 h-3 w-3 text-emerald-600" />
                         Tandai Selesai
                       </Button>
                     )}
@@ -312,7 +308,7 @@ export function TeacherQuestionBoxPanel({
                     {q.status !== 'DISMISSED' && (
                       <button
                         onClick={() => onDismiss(q.id)}
-                        className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors"
+                        className="rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
                         title="Abaikan pertanyaan"
                       >
                         <EyeOff className="h-4 w-4" />
@@ -326,10 +322,10 @@ export function TeacherQuestionBoxPanel({
         </div>
 
         {/* Footer info */}
-        <div className="border-t border-slate-200 bg-slate-50 px-6 py-3 text-right text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+        <div className="border-t border-[#e8e4dc] bg-stone-50 px-6 py-3 text-right text-xs text-stone-500">
           Pertanyaan bersifat sementara untuk sesi ini dan terlindungi privasi antar peserta.
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

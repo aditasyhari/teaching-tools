@@ -103,31 +103,31 @@ export function ParticipantLivePollView({
   const effectiveSelected = hasResponded ? selectedOptionIds : localSelected;
 
   return (
-    <div className="bg-card border-2 border-primary/20 rounded-2xl p-5 sm:p-7 shadow-lg space-y-6 animate-in fade-in-50 duration-300">
+    <div className="bg-white border border-[#e8e4dc] rounded-2xl p-5 sm:p-7 shadow-xs space-y-5 animate-in fade-in-50 duration-300">
       {/* Top Banner */}
-      <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+      <div className="flex items-center justify-between gap-3 border-b border-[#e8e4dc] pb-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-primary/10 rounded-lg text-primary">
+          <div className="p-2 bg-amber-50 rounded-lg text-amber-600 border border-amber-200/60">
             <BarChart2 className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+              <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">
                 {isPollClosed ? 'Polling Ditutup' : 'Live Polling'}
               </span>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-[11px] text-stone-500">
                 {isMultiple ? 'Boleh pilih lebih dari satu' : 'Pilih satu jawaban'}
                 {responseCount !== undefined &&
                   responseCount > 0 &&
                   ` • ${responseCount} suara masuk`}
               </span>
             </div>
-            <h2 className="text-base sm:text-lg font-bold text-foreground line-clamp-1">{title}</h2>
+            <h2 className="text-base sm:text-lg font-bold text-stone-900 line-clamp-1">{title}</h2>
           </div>
         </div>
 
         {hasResponded && (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 shrink-0">
+          <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
             <CheckCircle2 className="w-3.5 h-3.5" />
             Terkirim
           </span>
@@ -135,8 +135,8 @@ export function ParticipantLivePollView({
       </div>
 
       {/* Question */}
-      <div className="bg-muted/40 border border-border/80 rounded-xl p-4 sm:p-5">
-        <p className="text-base sm:text-lg font-medium text-foreground leading-relaxed">
+      <div className="bg-stone-50 border border-[#e8e4dc] rounded-xl p-4 sm:p-5">
+        <p className="text-base sm:text-lg font-medium text-stone-900 leading-relaxed">
           {question}
         </p>
       </div>

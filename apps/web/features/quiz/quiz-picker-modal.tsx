@@ -1,8 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { HelpCircle, Play, X, Layers, Plus } from 'lucide-react';
-import { Button } from '@walikelas/ui';
+import { HelpCircle, Play, Layers, Plus } from 'lucide-react';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@walikelas/ui';
 import type { QuizSummary } from '@walikelas/types';
 import { fetchTeacherQuizzes } from '@walikelas/api-client';
 import { apiClient } from '../../lib/api';
@@ -70,41 +78,34 @@ export function QuizPickerModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="quiz-picker-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-    >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <DialogHeader className="border-b border-border pb-3 text-left">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <HelpCircle className="w-4 h-4" />
             </div>
-            <h3 id="quiz-picker-dialog-title" className="text-base font-bold text-slate-900 dark:text-slate-100">
-              Pilih Kuis untuk Dimulai
-            </h3>
+            <div>
+              <DialogTitle className="text-base font-bold text-foreground">
+                Pilih Kuis untuk Dimulai
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Pilih kuis dari bank soal yang ingin dimainkan bersama siswa di sesi ini.
+              </DialogDescription>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        </DialogHeader>
 
         {/* Modal Content */}
         {loading ? (
           <div className="py-12 flex flex-col items-center justify-center space-y-3">
-            <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs text-slate-500">Memuat kuis tersimpan...</span>
+            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs text-muted-foreground">Memuat kuis tersimpan...</span>
           </div>
         ) : quizzes.length === 0 ? (
           <div className="py-8 text-center space-y-3">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-muted-foreground">
               Anda belum memiliki kuis yang siap dimainkan.
             </p>
             <Link href="/teacher/quizzes/new" onClick={onClose}>
@@ -123,17 +124,17 @@ export function QuizPickerModal({
                   onClick={() => setSelectedId(quiz.id)}
                   className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between ${
                     isSelected
-                      ? 'border-indigo-600 bg-indigo-50/60 dark:bg-indigo-950/40 shadow-sm'
-                      : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700'
+                      ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 shadow-sm'
+                      : 'border-border hover:border-blue-300 dark:hover:border-blue-700'
                   }`}
                 >
                   <div className="space-y-1">
-                    <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    <div className="text-sm font-bold text-foreground">
                       {quiz.title}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <Layers className="w-3 h-3 text-indigo-500" />
+                        <Layers className="w-3 h-3 text-blue-500" />
                         {quiz.questionCount} Soal
                       </span>
                     </div>
@@ -142,8 +143,8 @@ export function QuizPickerModal({
                   <div
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                       isSelected
-                        ? 'border-indigo-600 bg-indigo-600 text-white'
-                        : 'border-slate-300 dark:border-slate-700'
+                        ? 'border-blue-600 bg-blue-600 text-white'
+                        : 'border-border'
                     }`}
                   >
                     {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -156,7 +157,7 @@ export function QuizPickerModal({
 
         {/* Modal Actions */}
         {quizzes.length > 0 && (
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <DialogFooter className="gap-2 sm:gap-2 pt-3 border-t border-border">
             <Button variant="secondary" onClick={onClose}>
               Batal
             </Button>
@@ -165,13 +166,13 @@ export function QuizPickerModal({
               leftIcon={<Play className="w-4 h-4 fill-current" />}
               onClick={handleStart}
               disabled={!selectedId}
-              className="font-bold bg-indigo-600 hover:bg-indigo-500"
+              className="font-bold bg-blue-600 hover:bg-blue-500"
             >
               Mulai Kuis di Sesi Ini
             </Button>
-          </div>
+          </DialogFooter>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,33 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
-import {
-  Play,
-  Pause,
-  RotateCcw,
-  Volume2,
-  VolumeX,
-  Maximize2,
-  Clock,
-  CheckCircle2,
-  Settings,
-} from 'lucide-react';
-import { Button, Badge } from '@walikelas/ui';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTimer, formatTime } from './use-timer';
-
-const PRESETS = [
-  { label: '1 Menit', seconds: 60 },
-  { label: '3 Menit', seconds: 180 },
-  { label: '5 Menit', seconds: 300 },
-  { label: '10 Menit', seconds: 600 },
-  { label: '15 Menit', seconds: 900 },
-];
+import { TimerHeader } from './timer-header';
+import { TimerStage } from './timer-stage';
+import { TimerControls } from './timer-controls';
+import { TimerPresets } from './timer-presets';
+import { CustomDurationDialog } from './custom-duration-dialog';
+import { Button } from '@walikelas/ui';
+import { Minimize2, Volume2, VolumeX } from 'lucide-react';
 
 export function TimerView(): React.JSX.Element {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showCustomModal, setShowCustomModal] = useState(false);
-  const [customMinutes, setCustomMinutes] = useState('5');
-  const [customSeconds, setCustomSeconds] = useState('0');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
+  const fullscreenContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     duration,
@@ -40,254 +28,301 @@ export function TimerView(): React.JSX.Element {
     pause,
     resume,
     reset,
+    addSeconds,
   } = useTimer({
     initialDuration: 300,
     enableSound: soundEnabled,
+    onComplete: () => {
+      setAnnouncement('Waktu pembelajaran telah selesai!');
+    },
   });
 
-  const handleSelectPreset = (seconds: number) => {
-    reset(seconds);
-  };
+  // Track fullscreen changes (e.g. user pressing ESC or browser F11)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
 
-  const handleApplyCustom = (e: React.FormEvent) => {
-    e.preventDefault();
-    const mins = parseInt(customMinutes, 10) || 0;
-    const secs = parseInt(customSeconds, 10) || 0;
-    const total = mins * 60 + secs;
-    if (total > 0) {
-      reset(total);
-      setShowCustomModal(false);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        if (fullscreenContainerRef.current) {
+          await fullscreenContainerRef.current.requestFullscreen();
+        } else {
+          await document.documentElement.requestFullscreen();
+        }
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // Fullscreen API may be disallowed by browser policy in some contexts
     }
-  };
+  }, []);
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
-  };
+  // Handlers with screen reader announcements
+  const handleStart = useCallback(() => {
+    start();
+    setAnnouncement(`Timer dimulai: ${formatTime(duration)}`);
+  }, [start, duration]);
 
+  const handlePause = useCallback(() => {
+    pause();
+    setAnnouncement(`Timer dijeda pada ${formatTime(remaining)}`);
+  }, [pause, remaining]);
+
+  const handleResume = useCallback(() => {
+    resume();
+    setAnnouncement('Timer dilanjutkan');
+  }, [resume]);
+
+  const handleReset = useCallback(() => {
+    reset();
+    setAnnouncement(`Timer diatur ulang ke ${formatTime(duration)}`);
+  }, [reset, duration]);
+
+  const handleSelectPreset = useCallback(
+    (seconds: number) => {
+      reset(seconds);
+      setAnnouncement(`Durasi timer diatur ke ${formatTime(seconds)}`);
+    },
+    [reset],
+  );
+
+  const handleApplyCustom = useCallback(
+    (seconds: number) => {
+      reset(seconds);
+      setAnnouncement(`Durasi kustom diatur ke ${formatTime(seconds)}`);
+    },
+    [reset],
+  );
+
+  const handleAddMinute = useCallback(
+    (secondsToAdd: number) => {
+      addSeconds(secondsToAdd);
+      setAnnouncement(`Menambahkan waktu ${secondsToAdd / 60} menit`);
+    },
+    [addSeconds],
+  );
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Never trigger shortcuts if typing inside form fields or if dialog is active
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable);
+
+      if (isTyping || showCustomModal) {
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (isCompleted) {
+          handleReset();
+        } else if (isRunning && !isPaused) {
+          handlePause();
+        } else if (isPaused) {
+          handleResume();
+        } else {
+          handleStart();
+        }
+      } else if (e.code === 'KeyR') {
+        e.preventDefault();
+        handleReset();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    showCustomModal,
+    isCompleted,
+    isRunning,
+    isPaused,
+    handleReset,
+    handlePause,
+    handleResume,
+    handleStart,
+  ]);
+
+  // If in native Fullscreen mode, render dedicated Projector Layout
+  if (isFullscreen) {
+    return (
+      <div
+        ref={fullscreenContainerRef}
+        className="fixed inset-0 z-50 bg-[#faf8f5] text-stone-900 flex flex-col justify-between p-6 sm:p-10 select-none"
+      >
+        {/* Screen Reader Live Region */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {announcement}
+        </div>
+
+        {/* Minimal Floating Top Header */}
+        <header className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+            <span className="text-sm font-extrabold text-stone-900 tracking-tight">
+              Timer Kelas — Mode Proyektor
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSoundEnabled((prev) => !prev)}
+              aria-label={soundEnabled ? 'Matikan suara bel' : 'Nyalakan suara bel'}
+              className="text-stone-700 hover:text-stone-900 hover:bg-stone-200/60"
+              leftIcon={
+                soundEnabled ? (
+                  <Volume2 className="w-4 h-4 text-amber-600" aria-hidden="true" />
+                ) : (
+                  <VolumeX className="w-4 h-4 text-stone-400" aria-hidden="true" />
+                )
+              }
+            >
+              <span className="text-xs font-semibold">
+                {soundEnabled ? 'Suara Aktif' : 'Senyap'}
+              </span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleFullscreen}
+              aria-label="Keluar dari layar penuh (Esc)"
+              className="border-[#e8e4dc] bg-white text-stone-800 hover:bg-stone-100 font-semibold"
+              leftIcon={<Minimize2 className="w-4 h-4" aria-hidden="true" />}
+            >
+              <span className="text-xs">Keluar (Esc)</span>
+            </Button>
+          </div>
+        </header>
+
+        {/* Central Massive Projector Stage */}
+        <main className="flex-1 flex flex-col items-center justify-center">
+          <TimerStage
+            remaining={remaining}
+            duration={duration}
+            progress={progress}
+            isRunning={isRunning}
+            isPaused={isPaused}
+            isCompleted={isCompleted}
+            isFullscreen={true}
+            onAddSeconds={handleAddMinute}
+          />
+
+          <TimerControls
+            isRunning={isRunning}
+            isPaused={isPaused}
+            isCompleted={isCompleted}
+            onStart={handleStart}
+            onPause={handlePause}
+            onResume={handleResume}
+            onReset={handleReset}
+            isFullscreen={true}
+          />
+        </main>
+
+        {/* Bottom Keyboard Hint Bar */}
+        <footer className="text-center">
+          <p className="text-xs text-stone-600 font-medium">
+            Pintasan Papan Ketik:{' '}
+            <span className="font-semibold text-stone-700">[Spasi]</span> Mulai/Jeda/Lanjut &bull;{' '}
+            <span className="font-semibold text-stone-700">[R]</span> Reset &bull;{' '}
+            <span className="font-semibold text-stone-700">[Esc]</span> Keluar Layar Penuh
+          </p>
+        </footer>
+      </div>
+    );
+  }
+
+  // Standard Workspace Layout
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#e8e4dc] shadow-xs">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-amber-600" />
-          <h1 className="text-lg font-bold text-stone-900">Timer Kelas</h1>
-          {isCompleted && (
-            <Badge variant="danger" size="sm">
-              Waktu Selesai!
-            </Badge>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            aria-label={soundEnabled ? 'Matikan suara alarm' : 'Nyalakan suara alarm'}
-            leftIcon={
-              soundEnabled ? (
-                <Volume2 className="w-4 h-4 text-stone-700" />
-              ) : (
-                <VolumeX className="w-4 h-4 text-stone-400" />
-              )
-            }
-          >
-            {soundEnabled ? 'Suara Aktif' : 'Mute'}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleFullscreen}
-            aria-label="Mode Layar Penuh / Proyektor"
-            leftIcon={<Maximize2 className="w-4 h-4 text-stone-700" />}
-          >
-            Layar Penuh
-          </Button>
-        </div>
+    <div ref={fullscreenContainerRef} className="max-w-4xl mx-auto space-y-6">
+      {/* Screen Reader Live Region */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
       </div>
 
-      {/* Main Timer Display Area */}
-      <div
-        className={`bg-white rounded-3xl border-2 p-8 sm:p-14 shadow-xs flex flex-col items-center justify-center text-center transition-all ${
-          isCompleted
-            ? 'border-red-500 bg-red-50/40 ring-4 ring-red-100'
-            : isRunning
-              ? 'border-amber-500 ring-4 ring-amber-100'
-              : 'border-[#e8e4dc]'
-        }`}
-      >
-        {/* Visual Countdown Digits */}
-        <div
-          role="timer"
-          aria-live="polite"
-          aria-atomic="true"
-          className={`font-mono text-7xl sm:text-9xl font-black tracking-tight select-none transition-colors ${
-            isCompleted ? 'text-red-600 animate-pulse' : 'text-stone-900'
-          }`}
-        >
-          {formatTime(remaining)}
-        </div>
+      {/* Top Header / Action Bar */}
+      <TimerHeader
+        isRunning={isRunning}
+        isPaused={isPaused}
+        isCompleted={isCompleted}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled((prev) => !prev)}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
+      />
 
-        {/* Visual Progress Bar */}
-        <div className="w-full max-w-md bg-stone-100 h-3 rounded-full mt-8 overflow-hidden">
-          <div
-            className={`h-full transition-all duration-300 ${
-              isCompleted ? 'bg-red-600' : 'bg-amber-500'
-            }`}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* Completion Message */}
-        {isCompleted && (
-          <div className="mt-6 flex items-center gap-2 text-red-600 font-bold text-lg animate-bounce">
-            <CheckCircle2 className="w-6 h-6" />
-            <span>Waktu pembelajaran telah habis!</span>
-          </div>
-        )}
+      {/* Main Display Stage */}
+      <section aria-label="Area Hitung Mundur Timer">
+        <TimerStage
+          remaining={remaining}
+          duration={duration}
+          progress={progress}
+          isRunning={isRunning}
+          isPaused={isPaused}
+          isCompleted={isCompleted}
+          onAddSeconds={handleAddMinute}
+        />
 
         {/* Action Controls */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
-          {!isRunning && !isPaused && (
-            <Button
-              variant="primary"
-              size="lg"
-              className="px-8 text-base shadow-md"
-              leftIcon={<Play className="w-5 h-5 fill-current" />}
-              onClick={() => start()}
-            >
-              Mulai Timer
-            </Button>
-          )}
+        <TimerControls
+          isRunning={isRunning}
+          isPaused={isPaused}
+          isCompleted={isCompleted}
+          onStart={handleStart}
+          onPause={handlePause}
+          onResume={handleResume}
+          onReset={handleReset}
+        />
+      </section>
 
-          {isRunning && !isPaused && (
-            <Button
-              variant="secondary"
-              size="lg"
-              className="px-8 text-base bg-amber-500 text-white hover:bg-amber-600 border-amber-600"
-              leftIcon={<Pause className="w-5 h-5 fill-current" />}
-              onClick={pause}
-            >
-              Jeda
-            </Button>
-          )}
+      {/* Preset Duration Selector */}
+      <section aria-label="Pilihan Durasi Cepat">
+        <TimerPresets
+          currentDuration={duration}
+          isRunning={isRunning}
+          onSelectPreset={handleSelectPreset}
+          onOpenCustom={() => setShowCustomModal(true)}
+        />
+      </section>
 
-          {isPaused && (
-            <Button
-              variant="primary"
-              size="lg"
-              className="px-8 text-base shadow-md"
-              leftIcon={<Play className="w-5 h-5 fill-current" />}
-              onClick={resume}
-            >
-              Lanjutkan
-            </Button>
-          )}
-
-          <Button
-            variant="outline"
-            size="lg"
-            className="px-6 text-base"
-            leftIcon={<RotateCcw className="w-5 h-5" />}
-            onClick={() => reset()}
-          >
-            Reset
-          </Button>
-        </div>
-      </div>
-
-      {/* Preset Duration Buttons */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-          Pilihan Durasi Cepat
-        </h2>
-
-        <div className="flex flex-wrap items-center gap-2.5">
-          {PRESETS.map((p) => {
-            const isSelected = duration === p.seconds && !isRunning;
-            return (
-              <button
-                key={p.seconds}
-                type="button"
-                onClick={() => handleSelectPreset(p.seconds)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                  isSelected
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
-              >
-                {p.label}
-              </button>
-            );
-          })}
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowCustomModal(true)}
-            leftIcon={<Settings className="w-4 h-4" />}
-          >
-            Durasi Kustom...
-          </Button>
-        </div>
-      </div>
+      {/* Keyboard Shortcuts Helper Footer */}
+      <footer className="p-3 bg-stone-100/70 border border-[#e8e4dc] rounded-2xl text-center text-xs text-stone-600">
+        <span className="font-semibold text-stone-700">Pintasan Praktis:</span> Tekan{' '}
+        <kbd className="px-1.5 py-0.5 font-mono text-[11px] font-bold bg-white border border-stone-200 rounded text-stone-800">
+          Spasi
+        </kbd>{' '}
+        untuk Mulai / Jeda / Lanjutkan &bull; Tekan{' '}
+        <kbd className="px-1.5 py-0.5 font-mono text-[11px] font-bold bg-white border border-stone-200 rounded text-stone-800">
+          R
+        </kbd>{' '}
+        untuk Reset
+      </footer>
 
       {/* Custom Duration Modal */}
-      {showCustomModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full shadow-2xl space-y-5 animate-scale-in">
-            <h3 className="font-bold text-slate-900 text-base">Atur Durasi Kustom</h3>
-
-            <form onSubmit={handleApplyCustom} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Menit</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="180"
-                    value={customMinutes}
-                    onChange={(e) => setCustomMinutes(e.target.value)}
-                    className="w-full h-11 px-3 border border-slate-300 rounded-xl text-center font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Detik</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={customSeconds}
-                    onChange={(e) => setCustomSeconds(e.target.value)}
-                    className="w-full h-11 px-3 border border-slate-300 rounded-xl text-center font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowCustomModal(false)}
-                >
-                  Batal
-                </Button>
-                <Button type="submit" variant="primary" size="sm">
-                  Terapkan
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CustomDurationDialog
+        open={showCustomModal}
+        onOpenChange={setShowCustomModal}
+        onApply={handleApplyCustom}
+        currentDurationSeconds={duration}
+      />
     </div>
   );
 }

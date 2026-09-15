@@ -5,3 +5,4 @@ export * from './MobileNavigation/index.js';
 export * from './UserMenu/index.js';
 export * from './PageHeaderSection/index.js';
 export * from './StatsOverview/index.js';
+export * from './MobileDrawer/index.js';

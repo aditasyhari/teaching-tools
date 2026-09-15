@@ -192,11 +192,11 @@ export function ProjectorSessionView({
   const participantCount = snapshot?.participantCount || (isDemo ? 32 : 0);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-indigo-600 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
       {/* Presentation Top Bar */}
       <header className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md px-6 py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30">
+          <div className="w-10 h-10 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center shadow-lg shadow-amber-500/20 font-bold">
             <Tv className="w-5 h-5" />
           </div>
           <div>
@@ -216,9 +216,9 @@ export function ProjectorSessionView({
 
         {/* Realtime Classroom Timer Banner if active */}
         {ctIsRunning && (
-          <div className="flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-950/80 border border-blue-600/50 shadow-inner">
-            <Clock className="w-5 h-5 text-blue-400 animate-pulse" />
-            <span className="text-sm font-semibold text-blue-200">Timer:</span>
+          <div className="flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-amber-950/80 border border-amber-500/50 shadow-inner">
+            <Clock className="w-5 h-5 text-amber-400 animate-pulse" />
+            <span className="text-sm font-semibold text-amber-200">Timer:</span>
             <span className="text-xl font-mono font-black text-white">
               {formatTime(ctRemaining)}
             </span>
@@ -227,7 +227,7 @@ export function ProjectorSessionView({
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs font-semibold text-slate-300">
-            <Users className="w-4 h-4 text-indigo-400" />
+            <Users className="w-4 h-4 text-amber-400" />
             <span>{participantCount} Peserta</span>
           </div>
 
@@ -287,7 +287,7 @@ export function ProjectorSessionView({
       )}
 
       {/* Main Presentation Stage */}
-      <main className="flex-1 flex flex-col justify-center items-center p-6 md:p-12 max-w-6xl w-full mx-auto">
+      <main className="flex-1 flex flex-col justify-center items-center p-4 sm:p-6 md:p-12 max-w-6xl 2xl:max-w-7xl 4k:max-w-[120rem] w-full mx-auto">
         {/* Stage 1: Highlighted Question from Question Box */}
         {(featuredQuestion || (isDemo && demoTab === 'QUESTION')) && (
           <div className="w-full animate-in fade-in zoom-in-95 duration-300">
@@ -310,7 +310,7 @@ export function ProjectorSessionView({
                 </span>
               </div>
               <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-                <Clock className="w-4 h-4 animate-spin" />
+                <Clock className="w-4 h-4 motion-safe:animate-spin" />
                 <span>Sedang Berlangsung</span>
               </div>
             </div>
@@ -392,7 +392,7 @@ export function ProjectorSessionView({
                   </div>
                   <div className="w-full h-4 bg-slate-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                      className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${opt.percentage || 0}%` }}
                     />
                   </div>
@@ -408,8 +408,8 @@ export function ProjectorSessionView({
           !pollState &&
           (!isDemo || demoTab === 'WAITING') && (
             <div className="text-center space-y-8 max-w-3xl animate-in fade-in duration-300">
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-indigo-950/80 border border-indigo-600/50 text-indigo-300 text-sm font-bold">
-                <Sparkles className="w-4 h-4 text-indigo-400" />
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-amber-950/80 border border-amber-500/50 text-amber-300 text-sm font-bold">
+                <Sparkles className="w-4 h-4 text-amber-400" />
                 <span>Sesi Kelas Siap Digunakan</span>
               </div>
 
@@ -417,34 +417,34 @@ export function ProjectorSessionView({
                 <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
                   Bergabung ke Sesi Kelas
                 </h2>
-                <p className="text-base md:text-xl text-slate-400 font-medium">
+                <p className="text-base md:text-xl text-slate-300 font-medium">
                   Buka browser di HP Anda dan masukkan kode sesi di bawah ini:
                 </p>
               </div>
 
               {/* Massive Monospace Join Code Box */}
-              <div className="p-8 md:p-12 rounded-3xl bg-slate-900 border-2 border-indigo-500/40 shadow-2xl space-y-4">
-                <p className="text-xs uppercase font-extrabold tracking-widest text-indigo-400">
+              <div className="p-8 md:p-12 rounded-3xl bg-slate-900 border-2 border-amber-500/50 shadow-2xl space-y-4">
+                <p className="text-xs uppercase font-extrabold tracking-widest text-amber-400">
                   Kode Sesi Kelas
                 </p>
-                <div className="text-5xl md:text-7xl font-mono font-black tracking-widest text-white selection:bg-white selection:text-slate-900">
+                <div className="text-6xl sm:text-7xl md:text-8xl font-mono font-black tracking-widest text-white selection:bg-amber-500 selection:text-slate-950">
                   {activeCode}
                 </div>
-                <div className="pt-2 text-sm text-slate-400 font-medium flex items-center justify-center gap-2">
+                <div className="pt-3 text-sm md:text-base text-slate-300 font-medium flex items-center justify-center gap-2">
                   <span>Alamat Web:</span>
-                  <span className="font-mono font-bold text-indigo-300 underline underline-offset-4">
+                  <span className="font-mono font-bold text-amber-300 underline underline-offset-4">
                     tools.walikelas.id/join
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-6 text-sm text-slate-500 font-medium">
+              <div className="flex items-center justify-center gap-6 text-sm text-slate-400 font-medium">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span>Koneksi Realtime Aktif</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-indigo-400" />
+                  <Users className="w-4 h-4 text-amber-400" />
                   <span>{participantCount} Siswa Terhubung</span>
                 </div>
               </div>

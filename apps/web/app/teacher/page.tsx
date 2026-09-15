@@ -12,7 +12,8 @@ import {
   Radio,
   FolderPlus,
 } from 'lucide-react';
-import { PageHeaderSection, StatsOverview, EmptyState, Button, Badge } from '@walikelas/ui';
+import Link from 'next/link';
+import { PageHeaderSection, StatsOverview, EmptyState, Button, Badge, Card } from '@walikelas/ui';
 
 export default function TeacherHomePage(): React.JSX.Element {
   const stats = [
@@ -88,16 +89,16 @@ export default function TeacherHomePage(): React.JSX.Element {
         }
         actions={
           <div className="flex items-center gap-2">
-            <a href="/teacher/activities">
+            <Link href="/teacher/activities">
               <Button variant="secondary" size="md" leftIcon={<FolderPlus className="w-4 h-4" />}>
                 Buat Kuis / Aktivitas
               </Button>
-            </a>
-            <a href="/teacher/sessions">
+            </Link>
+            <Link href="/teacher/sessions">
               <Button variant="primary" size="md" leftIcon={<Plus className="w-4 h-4" />}>
                 Mulai Sesi Kelas
               </Button>
-            </a>
+            </Link>
           </div>
         }
       />
@@ -114,39 +115,41 @@ export default function TeacherHomePage(): React.JSX.Element {
               Luncurkan perkakas yang paling sering digunakan dalam hitungan detik.
             </p>
           </div>
-          <a
+          <Link
             href="/teacher/tools"
             className="text-xs font-bold text-stone-700 hover:text-stone-950 hover:underline flex items-center gap-1"
           >
             <span>Lihat semua 13 perkakas</span>
             <ArrowRight className="w-3.5 h-3.5" />
-          </a>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickLaunchTools.map((tool) => (
-            <a
+            <Link
               key={tool.id}
               href={tool.href}
-              className="p-5 bg-white rounded-2xl border border-[#e8e4dc] hover:border-amber-300 hover:shadow-md transition-all flex flex-col justify-between group transform hover:-translate-y-0.5"
+              className="group flex"
             >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-xl bg-stone-50 border border-stone-200/70 group-hover:bg-amber-500 group-hover:border-amber-500 flex items-center justify-center transition-all">
-                    {tool.icon}
+              <Card className="p-5 w-full flex flex-col justify-between group-hover:border-amber-300 group-hover:shadow-md transition-all">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-stone-50 border border-stone-200/70 group-hover:bg-amber-500 group-hover:border-amber-500 flex items-center justify-center transition-all">
+                      {tool.icon}
+                    </div>
+                    <span className="text-[11px] font-semibold text-stone-400">{tool.category}</span>
                   </div>
-                  <span className="text-[11px] font-semibold text-stone-400">{tool.category}</span>
+                  <h3 className="font-bold text-stone-900 group-hover:text-amber-700 transition-colors">
+                    {tool.name}
+                  </h3>
+                  <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed">{tool.desc}</p>
                 </div>
-                <h3 className="font-bold text-stone-900 group-hover:text-amber-700 transition-colors">
-                  {tool.name}
-                </h3>
-                <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed">{tool.desc}</p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs font-bold text-amber-800">
-                <span>Buka Sekarang</span>
-                <Play className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-              </div>
-            </a>
+                <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs font-bold text-amber-800">
+                  <span>Buka Sekarang</span>
+                  <Play className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                </div>
+              </Card>
+            </Link>
           ))}
         </div>
       </div>
@@ -167,11 +170,11 @@ export default function TeacherHomePage(): React.JSX.Element {
           title="Tidak Ada Sesi Kelas yang Aktif"
           description="Mulai sesi baru untuk mendapatkan kode 6 digit yang dapat diproyeksikan dan dimasuki murid."
           action={
-            <a href="/teacher/sessions">
+            <Link href="/teacher/sessions">
               <Button variant="primary" size="md" leftIcon={<Plus className="w-4 h-4" />}>
                 Mulai Sesi Kelas Sekarang
               </Button>
-            </a>
+            </Link>
           }
         />
       </div>

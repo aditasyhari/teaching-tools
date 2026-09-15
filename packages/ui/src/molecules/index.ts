@@ -1,5 +1,6 @@
 export * from './SearchField/index.js';
 export * from './ToolCard/index.js';
+export * from './FeaturedToolCard/index.js';
 export * from './PageHeader/index.js';
 export * from './UserAvatar/index.js';
 export * from './Breadcrumb/index.js';

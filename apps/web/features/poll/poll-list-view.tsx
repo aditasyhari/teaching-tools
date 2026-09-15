@@ -4,7 +4,17 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus, Play, Edit2, Trash2, Search, BarChart2, AlertCircle } from 'lucide-react';
-import { Button, PageHeaderSection, EmptyState } from '@walikelas/ui';
+import {
+  Button,
+  PageHeaderSection,
+  EmptyState,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@walikelas/ui';
 import type { PollSummary } from '@walikelas/types';
 import { fetchTeacherPolls, deletePoll } from '@walikelas/api-client';
 import { apiClient } from '../../lib/api';
@@ -189,16 +199,28 @@ export function PollListView(): React.JSX.Element {
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
-            <h3 className="text-lg font-bold text-foreground">Hapus Polling?</h3>
-            <p className="text-sm text-muted-foreground">
-              Apakah Anda yakin ingin menghapus polling{' '}
-              <strong className="text-foreground">"{showDeleteModal.title}"</strong>? Tindakan ini
-              tidak dapat dibatalkan.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
+      <Dialog
+        open={Boolean(showDeleteModal)}
+        onOpenChange={(open) => !open && setShowDeleteModal(null)}
+      >
+        {showDeleteModal && (
+          <DialogContent className="max-w-md">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <DialogHeader className="text-left">
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Hapus Polling?
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  Apakah Anda yakin ingin menghapus polling{' '}
+                  <strong className="text-foreground">"{showDeleteModal.title}"</strong>? Tindakan ini
+                  tidak dapat dibatalkan.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2 pt-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -215,10 +237,10 @@ export function PollListView(): React.JSX.Element {
               >
                 {deletingId !== null ? 'Menghapus...' : 'Hapus Polling'}
               </Button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 }

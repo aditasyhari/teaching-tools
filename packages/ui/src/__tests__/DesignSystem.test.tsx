@@ -6,6 +6,7 @@ import { EmptyState } from '../molecules/EmptyState/EmptyState.js';
 import { JoinCodeDisplay } from '../molecules/JoinCodeDisplay/JoinCodeDisplay.js';
 import { StatCard } from '../molecules/StatCard/StatCard.js';
 import { ToolCard } from '../molecules/ToolCard/ToolCard.js';
+import { FeaturedToolCard } from '../molecules/FeaturedToolCard/FeaturedToolCard.js';
 import { ToolGrid } from '../organisms/ToolGrid/ToolGrid.js';
 import type { ToolMetadata } from '@walikelas/types';
 
@@ -94,17 +95,39 @@ describe('Design System Components', () => {
       },
     ];
 
-    it('renders tool card details correctly', () => {
+    it('renders tool card details cleanly without technical metadata', () => {
       const onAction = vi.fn();
       render(<ToolCard tool={mockTools[0]!} onAction={onAction} />);
       expect(screen.getByText('Timer Kelas')).toBeDefined();
       expect(screen.getByText('Penghitung waktu mundur kelas')).toBeDefined();
-      expect(screen.getByText('Lokal')).toBeDefined();
-      expect(screen.getByText('P0')).toBeDefined();
+      expect(screen.queryByText('P0')).toBeNull();
+      expect(screen.queryByText('Lokal')).toBeNull();
+      expect(screen.queryByText('Realtime')).toBeNull();
 
-      const actionBtn = screen.getByRole('button', { name: /buka perkakas/i });
+      const actionBtn = screen.getByRole('button', { name: /buka/i });
       fireEvent.click(actionBtn);
       expect(onAction).toHaveBeenCalledWith(mockTools[0]);
+    });
+
+    it('renders featured tool card with prominent badge and action', () => {
+      const onAction = vi.fn();
+      render(
+        <FeaturedToolCard
+          tool={{
+            ...mockTools[0]!,
+            featured: true,
+            featuredDescription: 'Atur ritme kegiatan kelas.',
+          }}
+          onAction={onAction}
+        />,
+      );
+      expect(screen.getByText('Timer Kelas')).toBeDefined();
+      expect(screen.getByText('Atur ritme kegiatan kelas.')).toBeDefined();
+      expect(screen.getByText('Utama')).toBeDefined();
+
+      const actionBtn = screen.getByRole('button', { name: /buka/i });
+      fireEvent.click(actionBtn);
+      expect(onAction).toHaveBeenCalled();
     });
 
     it('filters tools by category in ToolGrid', () => {
@@ -115,7 +138,7 @@ describe('Design System Components', () => {
 
     it('renders empty state when no tools match', () => {
       render(<ToolGrid tools={mockTools} searchQuery="nonexistent" />);
-      expect(screen.getByText('Tidak ada perkakas yang ditemukan')).toBeDefined();
+      expect(screen.getByText('Perkakas tidak ditemukan')).toBeDefined();
     });
   });
 });

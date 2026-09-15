@@ -2,37 +2,106 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #faf8f5;
-  --foreground: #1c1917;
-  --card: #ffffff;
-  --card-foreground: #1c1917;
-  --border: #e8e4dc;
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
-  --muted: #f4eee2;
-  --muted-foreground: #78716c;
+@layer base {
+  :root {
+    /* Canvas & Surfaces */
+    --background: 40 33% 98%;          /* #FAF8F5 Warm Paper Canvas */
+    --foreground: 24 10% 10%;          /* #1C1917 Warm Stone / Near Black */
+
+    --card: 0 0% 100%;                 /* #FFFFFF Pure Card Surface */
+    --card-foreground: 24 10% 10%;     /* #1C1917 */
+
+    --popover: 0 0% 100%;              /* #FFFFFF Popover / Dropdown */
+    --popover-foreground: 24 10% 10%;  /* #1C1917 */
+
+    --border: 38 18% 89%;              /* #E8E4DC Warm Natural Border */
+    --input: 38 18% 89%;               /* #E8E4DC Form Input Border */
+
+    /* Brand & Accent (Warm Amber / Gold Anchor) */
+    --primary: 38 92% 50%;             /* #F59E0B Amber 500 */
+    --primary-foreground: 24 10% 10%;  /* #1C1917 High-contrast text on Amber */
+
+    --secondary: 40 33% 95%;           /* #F4EEE2 Warm Stone Light */
+    --secondary-foreground: 24 10% 10%;/* #1C1917 */
+
+    --muted: 40 25% 94%;               /* #F5F0E6 Subtle Section Background */
+    --muted-foreground: 25 5% 42%;     /* #57534E Warm Stone Muted (WCAG AA > 4.5:1) */
+
+    --accent: 38 92% 50%;              /* #F59E0B Warm Amber Accent */
+    --accent-foreground: 24 10% 10%;   /* #1C1917 */
+
+    /* Semantic States */
+    --destructive: 0 84% 60%;          /* #EF4444 Semantic Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;            /* #16A34A Semantic Emerald Green */
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;             /* #F59E0B Semantic Amber */
+    --warning-foreground: 24 10% 10%;
+
+    --info: 217 91% 60%;               /* #3B82F6 Semantic Info Blue */
+    --info-foreground: 0 0% 100%;
+
+    --ring: 38 92% 50%;                /* #F59E0B Focus Ring */
+    --radius: 0.75rem;                 /* 12px Default Radius Scale */
+  }
+
+  .dark {
+    /* Presentation / Projector / Dark Surface */
+    --background: 222 47% 7%;          /* #0A0F1D Deep Presentation Canvas */
+    --foreground: 40 33% 98%;          /* #FAF8F5 Crisp Text */
+
+    --card: 222 40% 11%;               /* #111827 */
+    --card-foreground: 40 33% 98%;
+
+    --popover: 222 40% 11%;
+    --popover-foreground: 40 33% 98%;
+
+    --border: 222 25% 20%;             /* #243049 */
+    --input: 222 25% 20%;
+
+    --primary: 38 92% 50%;             /* #F59E0B */
+    --primary-foreground: 24 10% 10%;
+
+    --secondary: 222 30% 16%;
+    --secondary-foreground: 40 33% 98%;
+
+    --muted: 222 30% 16%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 38 92% 50%;
+    --accent-foreground: 24 10% 10%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 24 10% 10%;
+
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+
+    --ring: 38 92% 50%;
+  }
 }
 
-.dark {
-  --background: #0c1222;
-  --foreground: #faf8f5;
-  --card: #151d30;
-  --card-foreground: #faf8f5;
-  --border: #222e47;
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
-  --muted: #1a243b;
-  --muted-foreground: #94a3b8;
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Base keyframe animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -45,5 +114,20 @@ body {
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Accessibility: Respect Reduced Motion Globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html {
+    scroll-behavior: auto !important;
+  }
 }

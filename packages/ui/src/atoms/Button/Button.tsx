@@ -1,66 +1,100 @@
 import React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { Slot } from '@radix-ui/react-slot';
 import { cn } from '../../utils/cn.js';
 import { Spinner } from '../Spinner/Spinner.js';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+export const buttonVariants = cva(
+  'inline-flex items-center justify-center font-medium transition-all duration-150 ease-out select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:pointer-events-none active:scale-[0.98]',
+  {
+    variants: {
+      variant: {
+        primary:
+          'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-xs border border-transparent disabled:bg-blue-300',
+        default:
+          'bg-amber-500 text-stone-950 font-bold hover:bg-amber-600 active:bg-amber-700 shadow-xs border border-amber-600/30 disabled:bg-amber-200 disabled:text-stone-400',
+        secondary:
+          'bg-stone-100 text-stone-800 hover:bg-stone-200 active:bg-stone-300 border border-stone-200/70 disabled:bg-stone-50 disabled:text-stone-400',
+        outline:
+          'border border-stone-300 bg-transparent text-stone-800 hover:bg-stone-50 active:bg-stone-100 disabled:border-stone-200 disabled:text-stone-300',
+        ghost:
+          'bg-transparent text-stone-700 hover:bg-stone-100 active:bg-stone-200 disabled:text-stone-300',
+        danger:
+          'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-xs disabled:bg-red-300',
+        destructive:
+          'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-xs disabled:bg-red-300',
+        accent:
+          'bg-amber-100 text-amber-950 font-semibold hover:bg-amber-200 border border-amber-200/60 disabled:bg-amber-50 disabled:text-amber-300',
+      },
+      size: {
+        sm: 'h-8 px-3 text-xs rounded-lg gap-1.5',
+        md: 'h-10 px-4 text-sm rounded-lg gap-2',
+        lg: 'h-12 px-6 text-base rounded-xl gap-2.5',
+        icon: 'h-10 w-10 p-0 rounded-lg shrink-0',
+        'icon-sm': 'h-8 w-8 p-0 rounded-md shrink-0',
+        'icon-lg': 'h-12 w-12 p-0 rounded-xl shrink-0',
+      },
+    },
+    defaultVariants: {
+      variant: 'primary',
+      size: 'md',
+    },
+  },
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
 
-const variantClasses = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300',
-  secondary:
-    'bg-slate-100 text-slate-800 hover:bg-slate-200 active:bg-slate-300 disabled:bg-slate-50 disabled:text-slate-400',
-  outline:
-    'border border-slate-300 bg-transparent text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:border-slate-200 disabled:text-slate-300',
-  ghost:
-    'bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200 disabled:text-slate-300',
-  danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 disabled:bg-red-300',
-};
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      children,
+      className,
+      variant,
+      size,
+      asChild = false,
+      isLoading = false,
+      leftIcon,
+      rightIcon,
+      disabled,
+      type = 'button',
+      ...props
+    },
+    ref,
+  ) => {
+    const Comp = asChild ? Slot : 'button';
 
-const sizeClasses = {
-  sm: 'h-8 px-3 text-xs rounded-md gap-1.5',
-  md: 'h-10 px-4 text-sm rounded-lg gap-2',
-  lg: 'h-12 px-6 text-base rounded-lg gap-2.5',
-};
+    return (
+      <Comp
+        ref={ref}
+        {...(!asChild && {
+          type,
+          disabled: disabled || isLoading,
+          'aria-busy': isLoading,
+        })}
+        className={cn(buttonVariants({ variant, size, className }))}
+        {...props}
+      >
+        {asChild ? (
+          children
+        ) : isLoading ? (
+          <Spinner size={size === 'lg' ? 'md' : 'sm'} />
+        ) : (
+          <>
+            {leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>}
+            {children}
+            {rightIcon && <span className="inline-flex shrink-0">{rightIcon}</span>}
+          </>
+        )}
+      </Comp>
+    );
+  },
+);
 
-export function Button({
-  children,
-  className,
-  variant = 'primary',
-  size = 'md',
-  isLoading = false,
-  leftIcon,
-  rightIcon,
-  disabled,
-  type = 'button',
-  ...props
-}: ButtonProps): React.JSX.Element {
-  return (
-    <button
-      type={type}
-      disabled={disabled || isLoading}
-      aria-busy={isLoading}
-      className={cn(
-        'inline-flex items-center justify-center font-medium transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
-        'disabled:cursor-not-allowed disabled:pointer-events-none select-none',
-        variantClasses[variant],
-        sizeClasses[size],
-        className,
-      )}
-      {...props}
-    >
-      {isLoading ? (
-        <Spinner size={size === 'lg' ? 'md' : 'sm'} />
-      ) : (
-        leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>
-      )}
-      {children}
-      {!isLoading && rightIcon && <span className="inline-flex shrink-0">{rightIcon}</span>}
-    </button>
-  );
-}
+Button.displayName = 'Button';

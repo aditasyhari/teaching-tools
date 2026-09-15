@@ -7,6 +7,15 @@ export const metadata: Metadata = {
   description: 'Gabung ke sesi kelas interaktif guru Anda secara langsung.',
 };
 
-export default function JoinPage(): React.JSX.Element {
-  return <ParticipantJoinView />;
+interface JoinPageProps {
+  searchParams: Promise<{
+    code?: string;
+  }>;
+}
+
+export default async function JoinPage({
+  searchParams,
+}: JoinPageProps): Promise<React.JSX.Element> {
+  const { code } = await searchParams;
+  return <ParticipantJoinView initialCode={code || ''} />;
 }

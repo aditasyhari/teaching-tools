@@ -1,36 +1,36 @@
 /**
  * WaliKelas Teaching Tools — Centralized Color Tokens
- * Calm, professional educational palette.
+ * Warm, pedagogical, professional educational palette.
  */
 
 export const colors = {
-  // Brand / Primary
+  // Brand Primary (Warm Amber / Sunflower Gold Anchor)
   brand: {
-    50: '#eff6ff',
-    100: '#dbeafe',
-    200: '#bfdbfe',
-    300: '#93c5fd',
-    400: '#60a5fa',
-    500: '#3b82f6',
-    600: '#2563eb', // Primary brand action
-    700: '#1d4ed8',
-    800: '#1e40af',
-    900: '#1e3a8a',
+    50: '#fffbeb',
+    100: '#fef3c7',
+    200: '#fde68a',
+    300: '#fcd34d',
+    400: '#fbbf24',
+    500: '#f59e0b', // Primary Brand Action
+    600: '#d97706',
+    700: '#b45309',
+    800: '#92400e',
+    900: '#78350f',
   },
 
-  // Slate Neutrals
-  neutral: {
-    50: '#f8fafc',
-    100: '#f1f5f9',
-    200: '#e2e8f0',
-    300: '#cbd5e1',
-    400: '#94a3b8',
-    500: '#64748b',
-    600: '#475569',
-    700: '#334155',
-    800: '#1e293b',
-    900: '#0f172a',
-    950: '#020617',
+  // Warm Stone Neutrals (Replacing cold slates)
+  stone: {
+    50: '#fafaf9',
+    100: '#f5f5f4',
+    200: '#e7e5e4',
+    300: '#d6d3d1',
+    400: '#a8a29e',
+    500: '#78716c',
+    600: '#57534e',
+    700: '#44403c',
+    800: '#292524',
+    900: '#1c1917',
+    950: '#0c0a09',
   },
 
   // Semantic Feedback
@@ -48,32 +48,39 @@ export const colors = {
     600: '#d97706',
     700: '#b45309',
   },
-  danger: {
+  destructive: {
     50: '#fef2f2',
     100: '#fee2e2',
     500: '#ef4444',
     600: '#dc2626',
     700: '#b91c1c',
   },
+  info: {
+    50: '#eff6ff',
+    100: '#dbeafe',
+    500: '#3b82f6',
+    600: '#2563eb',
+    700: '#1d4ed8',
+  },
 
-  // Surface & Canvas
+  // Canvas, Surface & Borders
   surface: {
     base: '#ffffff',
-    canvas: '#f8fafc',
-    subtle: '#f1f5f9',
+    canvas: '#faf8f5', // Warm Paper Canvas
+    subtle: '#f4eee2',
     card: '#ffffff',
     elevated: '#ffffff',
-    border: '#e2e8f0',
-    borderSubtle: '#f1f5f9',
-    borderStrong: '#cbd5e1',
+    border: '#e8e4dc', // Warm Natural Border
+    borderSubtle: '#f4eee2',
+    borderStrong: '#d6d3d1',
   },
 
   // Text
   text: {
-    primary: '#0f172a',
-    secondary: '#475569',
-    muted: '#64748b',
-    disabled: '#94a3b8',
+    primary: '#1c1917', // Stone 900
+    secondary: '#57534e', // Stone 600 (Accessible WCAG AA)
+    muted: '#78716c', // Stone 500
+    disabled: '#a8a29e',
     inverse: '#ffffff',
   },
 } as const;

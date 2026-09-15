@@ -163,6 +163,25 @@ export function useTimer({
     [clearTimerInterval, duration],
   );
 
+  const addSeconds = useCallback(
+    (secondsToAdd: number) => {
+      if (secondsToAdd <= 0) return;
+      setDuration((prev) => prev + secondsToAdd);
+      setRemaining((prev) => prev + secondsToAdd);
+
+      if (isRunning && !isPaused && endTimeRef.current) {
+        endTimeRef.current += secondsToAdd * 1000;
+      } else if (isPaused) {
+        remainingOnPauseRef.current += secondsToAdd;
+      }
+
+      if (isCompleted) {
+        setIsCompleted(false);
+      }
+    },
+    [isCompleted, isPaused, isRunning],
+  );
+
   // Clean up on unmount
   useEffect(() => {
     return () => clearTimerInterval();
@@ -181,5 +200,6 @@ export function useTimer({
     pause,
     resume,
     reset,
+    addSeconds,
   };
 }

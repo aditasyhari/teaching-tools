@@ -67,6 +67,24 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
     }
   }, [isTeacher]);
 
+  const callbacksRef = useRef({
+    onParticipantJoined,
+    onParticipantLeft,
+    onSessionStarted,
+    onSessionEnded,
+    onError,
+  });
+
+  useEffect(() => {
+    callbacksRef.current = {
+      onParticipantJoined,
+      onParticipantLeft,
+      onSessionStarted,
+      onSessionEnded,
+      onError,
+    };
+  });
+
   const joinSession = useCallback(() => {
     const socket = socketRef.current;
     if (!socket || !socket.connected) return;
@@ -93,9 +111,16 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
     if (isTeacher && !sessionId && !joinCode) return;
     if (!isTeacher && (!joinCode || !displayName)) return;
 
+    // Robust origin resolution: safe against /api/v1 suffix and trailing slashes
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4006';
-    const baseUrl = apiUrl.replace(/\/+$/, '');
-    const socketUrl = baseUrl.endsWith('/sessions') ? baseUrl : `${baseUrl}/sessions`;
+    let socketUrl: string;
+    try {
+      const parsed = new URL(apiUrl);
+      socketUrl = `${parsed.origin}/sessions`;
+    } catch {
+      const clean = apiUrl.replace(/\/api(\/v\d+)?\/?$/, '').replace(/\/+$/, '');
+      socketUrl = clean.endsWith('/sessions') ? clean : `${clean}/sessions`;
+    }
 
     const socket: Socket = io(socketUrl, {
       withCredentials: true,
@@ -178,7 +203,7 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
           participantCount: payload.count,
         };
       });
-      onParticipantJoined?.(payload);
+      callbacksRef.current.onParticipantJoined?.(payload);
     });
 
     // Event: session:participant-left
@@ -199,7 +224,7 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
           participantCount: payload.count,
         };
       });
-      onParticipantLeft?.(payload);
+      callbacksRef.current.onParticipantLeft?.(payload);
     });
 
     // Event: session:started
@@ -212,7 +237,7 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
           startedAt: payload.startedAt,
         };
       });
-      onSessionStarted?.(payload);
+      callbacksRef.current.onSessionStarted?.(payload);
     });
 
     // Event: session:ended
@@ -225,13 +250,13 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
           endedAt: payload.endedAt,
         };
       });
-      onSessionEnded?.(payload);
+      callbacksRef.current.onSessionEnded?.(payload);
     });
 
     // Event: session:error
     socket.on('session:error', (payload: SessionErrorPayload) => {
       setError(payload.message);
-      onError?.(payload);
+      callbacksRef.current.onError?.(payload);
     });
 
     // Heartbeat Interval
@@ -257,11 +282,6 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
     joinCode,
     displayName,
     joinSession,
-    onParticipantJoined,
-    onParticipantLeft,
-    onSessionStarted,
-    onSessionEnded,
-    onError,
   ]);
 
   const startSession = useCallback(() => {

@@ -24,7 +24,7 @@ export function Textarea({
   return (
     <div className="w-full flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-slate-700 select-none">
+        <label htmlFor={inputId} className="text-xs font-semibold text-foreground select-none">
           {label}
         </label>
       )}
@@ -34,23 +34,23 @@ export function Textarea({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : helperText ? helperId : undefined}
         className={cn(
-          'w-full px-3 py-2 text-sm text-slate-900 bg-white border rounded-lg',
-          'placeholder:text-slate-400 transition-colors resize-y min-h-[5rem]',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1',
-          'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed',
+          'w-full px-3.5 py-2.5 text-sm text-foreground bg-card border rounded-xl shadow-xs transition-colors resize-y min-h-[5rem]',
+          'placeholder:text-muted-foreground',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring',
+          'disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed',
           error
-            ? 'border-red-500 focus-visible:ring-red-500'
-            : 'border-slate-300 hover:border-slate-400',
+            ? 'border-destructive focus-visible:ring-destructive'
+            : 'border-border hover:border-stone-400',
           className,
         )}
         {...props}
       />
       {error ? (
-        <p id={errorId} className="text-xs text-red-600 font-medium">
+        <p id={errorId} className="text-xs text-destructive font-medium">
           {error}
         </p>
       ) : helperText ? (
-        <p id={helperId} className="text-xs text-slate-500">
+        <p id={helperId} className="text-xs text-muted-foreground">
           {helperText}
         </p>
       ) : null}

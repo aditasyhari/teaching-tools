@@ -15,7 +15,19 @@ import {
   HelpCircle,
   Tv,
 } from 'lucide-react';
-import { Button, Badge, PageHeaderSection, EmptyState } from '@walikelas/ui';
+import {
+  Button,
+  Badge,
+  Card,
+  PageHeaderSection,
+  EmptyState,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@walikelas/ui';
 import type { SessionSnapshot } from '@walikelas/types';
 import { useSessionSocket } from './use-session-socket';
 import { apiClient } from '../../lib/api';
@@ -341,40 +353,41 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
         </div>
       )}
 
-      {/* Hero Join Card */}
+      {/* Hero Join & Controls Card */}
       {!isEnded && (
-        <div className="bg-gradient-to-br from-indigo-900 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-            <div className="lg:col-span-2 space-y-3">
-              <p className="text-indigo-200 text-sm font-medium uppercase tracking-wider">
-                Minta murid bergabung melalui tautan atau masukkan kode:
-              </p>
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="bg-indigo-800/80 px-6 py-3 rounded-xl border border-indigo-700/50 shadow-inner">
-                  <span className="text-3xl sm:text-5xl font-mono font-extrabold tracking-widest text-indigo-100">
+        <Card className="p-6 sm:p-7 border-[#e8e4dc] bg-white shadow-xs">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            {/* Join Code & Quick Actions */}
+            <div className="lg:col-span-6 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-500">
+                <span>Kode Masuk Sesi Kelas</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="bg-stone-50 px-5 py-2.5 rounded-xl border border-[#e8e4dc]">
+                  <span className="text-3xl sm:text-4xl font-mono font-black tracking-widest text-stone-900">
                     {session.joinCode}
                   </span>
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <Button
-                    variant="secondary"
+                    variant="outline"
                     size="sm"
                     leftIcon={
-                      copiedCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />
+                      copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />
                     }
                     onClick={handleCopyCode}
                   >
-                    {copiedCode ? 'Tersalin!' : 'Salin Kode'}
+                    {copiedCode ? 'Tersalin' : 'Salin Kode'}
                   </Button>
                   <Button
-                    variant="secondary"
+                    variant="outline"
                     size="sm"
                     leftIcon={
-                      copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />
+                      copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />
                     }
                     onClick={handleCopyLink}
                   >
-                    {copiedLink ? 'Link Tersalin!' : 'Salin Link Gabung'}
+                    {copiedLink ? 'Link Tersalin' : 'Salin Link'}
                   </Button>
                   <a
                     href={`/projector/${session.joinCode}`}
@@ -382,169 +395,176 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
                     rel="noreferrer"
                   >
                     <Button
-                      variant="secondary"
+                      variant="outline"
                       size="sm"
-                      leftIcon={<Tv className="w-4 h-4 text-indigo-300" />}
+                      leftIcon={<Tv className="w-3.5 h-3.5 text-amber-600" />}
                     >
-                      Buka Layar Proyektor
+                      Layar Proyektor
                     </Button>
                   </a>
                 </div>
               </div>
-              <p className="text-xs text-indigo-300">
-                Murid membuka:{' '}
-                <span className="font-semibold underline">tools.walikelas.id/join</span> lalu ketik
-                kode di atas.
+              <p className="text-xs text-stone-500">
+                Murid dapat membuka <span className="font-semibold text-stone-800 underline">tools.walikelas.id/join</span> di ponsel lalu memasukkan kode di atas.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 justify-center lg:items-end border-t lg:border-t-0 lg:border-l border-indigo-800/80 pt-4 lg:pt-0 lg:pl-6">
+            {/* Session Actions / Tools Toolbar */}
+            <div className="lg:col-span-6 flex flex-col gap-3 lg:border-l border-[#e8e4dc] lg:pl-6 pt-4 lg:pt-0">
               {isWaiting && (
-                <Button
-                  variant="primary"
-                  size="lg"
-                  leftIcon={<Play className="w-5 h-5 fill-current" />}
-                  onClick={startSession}
-                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
-                >
-                  Mulai Sesi Sekarang
-                </Button>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    leftIcon={<Play className="w-4 h-4 fill-current" />}
+                    onClick={startSession}
+                    className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+                  >
+                    Mulai Sesi Sekarang
+                  </Button>
+                  <span className="text-xs text-stone-500">
+                    Peserta yang telah bergabung akan otomatis memasuki sesi saat dimulai.
+                  </span>
+                </div>
               )}
 
               {isActive && (
-                <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
-                  {!isQuizActive && !isPollActive && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-stone-500">
+                    <span>Menu Alat Interaktif</span>
                     <Button
-                      variant="secondary"
-                      size="lg"
-                      leftIcon={<BarChart2 className="w-5 h-5 text-blue-400" />}
-                      onClick={() => {
-                        setPollHudDismissed(false);
-                        setShowPollPicker(true);
-                      }}
-                      className="w-full sm:w-auto bg-blue-900/80 hover:bg-blue-800 text-white font-bold border-blue-600 shadow-md"
+                      variant="danger"
+                      size="sm"
+                      leftIcon={<Square className="w-3.5 h-3.5 fill-current" />}
+                      onClick={() => setShowConfirmEnd(true)}
                     >
-                      Mulai Polling
+                      Akhiri Sesi
                     </Button>
-                  )}
-                  {!isQuizActive && !isPollActive && (
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {!isQuizActive && !isPollActive && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<BarChart2 className="w-4 h-4 text-blue-600" />}
+                        onClick={() => {
+                          setPollHudDismissed(false);
+                          setShowPollPicker(true);
+                        }}
+                        className="justify-start font-medium"
+                      >
+                        Polling
+                      </Button>
+                    )}
+
+                    {!isQuizActive && !isPollActive && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<HelpCircle className="w-4 h-4 text-indigo-600" />}
+                        onClick={() => {
+                          setHudDismissed(false);
+                          setShowQuizPicker(true);
+                        }}
+                        className="justify-start font-medium"
+                      >
+                        Kuis
+                      </Button>
+                    )}
+
                     <Button
-                      variant="secondary"
-                      size="lg"
-                      leftIcon={<HelpCircle className="w-5 h-5 text-indigo-400" />}
-                      onClick={() => {
-                        setHudDismissed(false);
-                        setShowQuizPicker(true);
-                      }}
-                      className="w-full sm:w-auto bg-indigo-800/80 hover:bg-indigo-700 text-white font-bold border-indigo-600 shadow-md"
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<HelpCircle className="w-4 h-4 text-amber-600" />}
+                      onClick={() => setShowQuestionBox(true)}
+                      className="justify-between font-medium"
                     >
-                      Mulai Kuis
+                      <span className="truncate">Tanya Guru</span>
+                      {qbPendingCount > 0 && (
+                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-amber-500 rounded-full">
+                          {qbPendingCount}
+                        </span>
+                      )}
                     </Button>
-                  )}
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    leftIcon={<HelpCircle className="w-5 h-5 text-amber-400" />}
-                    onClick={() => setShowQuestionBox(true)}
-                    className="relative w-full sm:w-auto bg-amber-950/80 hover:bg-amber-900 text-white font-bold border-amber-600 shadow-md"
-                  >
-                    <span>Tanya Guru</span>
-                    {qbPendingCount > 0 && (
-                      <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-amber-500 rounded-full">
-                        {qbPendingCount}
-                      </span>
-                    )}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    leftIcon={<Hand className="w-5 h-5 text-amber-400" />}
-                    onClick={() => setShowRaiseHand(true)}
-                    className="relative w-full sm:w-auto bg-amber-950/80 hover:bg-amber-900 text-white font-bold border-amber-600 shadow-md"
-                  >
-                    <span>Angkat Tangan</span>
-                    {rhRaisedCount > 0 && (
-                      <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-amber-500 rounded-full animate-pulse">
-                        {rhRaisedCount}
-                      </span>
-                    )}
-                    {rhCurrentSpeaker && (
-                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-1.5 py-0.5 text-xs font-bold text-white">
-                        <Mic className="h-3 w-3 animate-pulse" />
-                      </span>
-                    )}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    leftIcon={<Lightbulb className="w-5 h-5 text-violet-400" />}
-                    onClick={() => setShowBrainstorm(true)}
-                    className="relative w-full sm:w-auto bg-violet-950/80 hover:bg-violet-900 text-white font-bold border-violet-600 shadow-md"
-                  >
-                    <span>Papan Ide</span>
-                    {bsTotalCount > 0 && (
-                      <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-violet-600 rounded-full">
-                        {bsVisibleCount}
-                      </span>
-                    )}
-                    {bsActivity && bsActivity.status === 'OPEN' && (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                        Aktif
-                      </span>
-                    )}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    leftIcon={<ClipboardCheck className="w-5 h-5 text-indigo-400" />}
-                    onClick={() => setShowExitTicket(true)}
-                    className="relative w-full sm:w-auto bg-indigo-950/80 hover:bg-indigo-900 text-white font-bold border-indigo-600 shadow-md"
-                  >
-                    <span>Tiket Keluar</span>
-                    {etResponseCount > 0 && (
-                      <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-indigo-600 rounded-full">
-                        {etResponseCount}
-                      </span>
-                    )}
-                    {etActivity && etActivity.status === 'OPEN' && (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                        Aktif
-                      </span>
-                    )}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    leftIcon={<Clock className="w-5 h-5 text-blue-400" />}
-                    onClick={() => setShowClassroomTimer(true)}
-                    className="relative w-full sm:w-auto bg-blue-950/80 hover:bg-blue-900 text-white font-bold border-blue-600 shadow-md"
-                  >
-                    <span>Timer</span>
-                    {(ctIsRunning || ctIsPaused || ctIsCompleted) && (
-                      <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-mono font-bold leading-none text-white bg-blue-600 rounded-full">
-                        {formatTimerTime(ctRemaining)}
-                      </span>
-                    )}
-                    {ctIsRunning && (
-                      <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white animate-pulse">
-                        Aktif
-                      </span>
-                    )}
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="lg"
-                    leftIcon={<Square className="w-5 h-5 fill-current" />}
-                    onClick={() => setShowConfirmEnd(true)}
-                    className="w-full sm:w-auto font-bold"
-                  >
-                    Akhiri Sesi Kelas
-                  </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Hand className="w-4 h-4 text-amber-600" />}
+                      onClick={() => setShowRaiseHand(true)}
+                      className="justify-between font-medium"
+                    >
+                      <span className="truncate">Angkat Tangan</span>
+                      {rhRaisedCount > 0 ? (
+                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-amber-500 rounded-full animate-pulse">
+                          {rhRaisedCount}
+                        </span>
+                      ) : rhCurrentSpeaker ? (
+                        <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500 p-0.5 text-white">
+                          <Mic className="h-3 w-3 animate-pulse" />
+                        </span>
+                      ) : null}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Lightbulb className="w-4 h-4 text-violet-600" />}
+                      onClick={() => setShowBrainstorm(true)}
+                      className="justify-between font-medium"
+                    >
+                      <span className="truncate">Papan Ide</span>
+                      {bsActivity?.status === 'OPEN' ? (
+                        <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                          Aktif
+                        </span>
+                      ) : bsTotalCount > 0 ? (
+                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-stone-700 bg-stone-100 rounded-full">
+                          {bsVisibleCount}
+                        </span>
+                      ) : null}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<ClipboardCheck className="w-4 h-4 text-teal-600" />}
+                      onClick={() => setShowExitTicket(true)}
+                      className="justify-between font-medium"
+                    >
+                      <span className="truncate">Tiket Keluar</span>
+                      {etActivity?.status === 'OPEN' ? (
+                        <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                          Aktif
+                        </span>
+                      ) : etResponseCount > 0 ? (
+                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-stone-700 bg-stone-100 rounded-full">
+                          {etResponseCount}
+                        </span>
+                      ) : null}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Clock className="w-4 h-4 text-blue-600" />}
+                      onClick={() => setShowClassroomTimer(true)}
+                      className="justify-between font-medium"
+                    >
+                      <span className="truncate">Timer</span>
+                      {(ctIsRunning || ctIsPaused || ctIsCompleted) && (
+                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-mono font-bold text-stone-700 bg-stone-100 rounded-full">
+                          {formatTimerTime(ctRemaining)}
+                        </span>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {quizError && (
@@ -601,23 +621,23 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
 
       {/* Sesi Selesai Banner */}
       {isEnded && (
-        <div className="p-6 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <Card className="p-6 border-[#e8e4dc] bg-stone-50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-lg font-bold text-stone-900">
               Sesi Kelas Telah Berakhir
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-stone-600">
               Semua peserta telah diputus dan sesi ini sudah ditutup secara permanen.
             </p>
           </div>
-          <Button variant="secondary" onClick={() => router.push('/teacher/sessions')}>
+          <Button variant="outline" onClick={() => router.push('/teacher/sessions')}>
             Kembali ke Daftar Sesi
           </Button>
-        </div>
+        </Card>
       )}
 
       {/* Participant Roster Card */}
-      <div className="bg-white border border-[#e8e4dc] rounded-2xl p-6 shadow-sm space-y-4">
+      <Card className="p-6 space-y-4">
         <div className="flex items-center justify-between border-b border-[#e8e4dc] pb-4">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-amber-600" />
@@ -675,35 +695,35 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Confirmation Modal for End Session */}
-      {showConfirmEnd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+      <Dialog open={showConfirmEnd} onOpenChange={setShowConfirmEnd}>
+        <DialogContent className="max-w-md">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
               <Square className="w-6 h-6 fill-current" />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <DialogHeader className="text-left">
+              <DialogTitle className="text-lg font-bold text-foreground">
                 Akhiri Sesi Kelas Ini?
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
                 Semua peserta yang terhubung akan menerima pemberitahuan bahwa sesi telah berakhir.
                 Tindakan ini tidak dapat dibatalkan.
-              </p>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="secondary" onClick={() => setShowConfirmEnd(false)}>
-                Batal
-              </Button>
-              <Button variant="danger" onClick={handleConfirmEnd}>
-                Ya, Akhiri Sesi
-              </Button>
-            </div>
+              </DialogDescription>
+            </DialogHeader>
           </div>
-        </div>
-      )}
+          <DialogFooter className="gap-2 sm:gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setShowConfirmEnd(false)}>
+              Batal
+            </Button>
+            <Button variant="danger" onClick={handleConfirmEnd}>
+              Ya, Akhiri Sesi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Quiz Picker Modal */}
       <QuizPickerModal

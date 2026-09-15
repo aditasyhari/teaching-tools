@@ -1,8 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BarChart2, Play, X, Plus, Sparkles, Folder } from 'lucide-react';
-import { Button } from '@walikelas/ui';
+import { BarChart2, Play, Plus, Sparkles, Folder } from 'lucide-react';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from '@walikelas/ui';
 import type { PollSummary } from '@walikelas/types';
 import { fetchTeacherPolls, createPoll } from '@walikelas/api-client';
 import { apiClient } from '../../lib/api';
@@ -85,75 +97,40 @@ export function PollPickerModal({
     }
   };
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="poll-picker-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-    >
-      <div className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-5">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-border pb-3">
+        <DialogHeader className="border-b border-border pb-3 text-left">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <BarChart2 className="w-4 h-4" />
             </div>
-            <h3 id="poll-picker-dialog-title" className="text-base font-bold text-foreground">
-              Mulai Polling / Quick Feedback
-            </h3>
+            <div>
+              <DialogTitle className="text-base font-bold text-foreground">
+                Mulai Polling / Quick Feedback
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Pilih template cepat atau polling yang telah Anda simpan sebelumnya.
+              </DialogDescription>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        </DialogHeader>
 
-        {/* Tab Switcher */}
-        <div className="flex bg-muted/60 p-1 rounded-xl gap-1">
-          <button
-            type="button"
-            onClick={() => setTab('PRESETS')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-              tab === 'PRESETS'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span>Preset Cepat (1-Klik)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('SAVED')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-              tab === 'SAVED'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Folder className="w-3.5 h-3.5 text-primary" />
-            <span>Polling Tersimpan ({polls.length})</span>
-          </button>
-        </div>
+        {/* Tab Switcher & Content */}
+        <Tabs value={tab} onValueChange={(val) => setTab(val as 'PRESETS' | 'SAVED')} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="PRESETS" className="flex items-center justify-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span>Preset Cepat</span>
+            </TabsTrigger>
+            <TabsTrigger value="SAVED" className="flex items-center justify-center gap-1.5">
+              <Folder className="w-3.5 h-3.5 text-primary" />
+              <span>Tersimpan ({polls.length})</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Tab Content */}
-        {tab === 'PRESETS' ? (
-          <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+          <TabsContent value="PRESETS" className="mt-3 space-y-2.5 max-h-80 overflow-y-auto pr-1">
             {QUICK_FEEDBACK_PRESETS.map((preset) => (
               <div
                 key={preset.id}
@@ -186,9 +163,9 @@ export function PollPickerModal({
                 </Button>
               </div>
             ))}
-          </div>
-        ) : (
-          <div>
+          </TabsContent>
+
+          <TabsContent value="SAVED" className="mt-3">
             {loading ? (
               <div className="py-12 flex flex-col items-center justify-center space-y-3">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -240,7 +217,7 @@ export function PollPickerModal({
             )}
 
             {polls.length > 0 && (
-              <div className="flex justify-end gap-3 pt-4 mt-3 border-t border-border">
+              <DialogFooter className="gap-2 sm:gap-2 pt-4 mt-3 border-t border-border">
                 <Button variant="outline" size="sm" onClick={onClose}>
                   Batal
                 </Button>
@@ -253,11 +230,11 @@ export function PollPickerModal({
                 >
                   Mulai Polling
                 </Button>
-              </div>
+              </DialogFooter>
             )}
-          </div>
-        )}
-      </div>
-    </div>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 }

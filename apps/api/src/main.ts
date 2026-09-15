@@ -20,7 +20,10 @@ async function bootstrap() {
   app.use(helmet());
 
   // CORS Configuration
-  const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3006')
+  const allowedOrigins = (
+    process.env.CORS_ALLOWED_ORIGINS ||
+    'http://localhost:3006,http://127.0.0.1:3006,http://localhost:3000,http://127.0.0.1:3000'
+  )
     .split(',')
     .map((origin) => origin.trim());
 

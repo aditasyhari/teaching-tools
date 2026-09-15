@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   ClipboardCheck,
-  X,
   Play,
   StopCircle,
   Plus,
@@ -14,7 +13,14 @@ import {
   Sparkles,
   Star,
 } from 'lucide-react';
-import { Button } from '@walikelas/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@walikelas/ui';
 import type {
   ExitTicketActivity,
   ExitTicketAggregates,
@@ -203,32 +209,27 @@ export function TeacherExitTicketPanel({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="exit-ticket-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
-    >
-      <div className="relative flex h-[90vh] max-h-[780px] w-full max-w-3xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] h-[780px] overflow-hidden flex flex-col p-0 gap-0 border-[#e8e4dc] bg-[#faf8f5] dark:border-stone-800 dark:bg-stone-900 shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+        <DialogHeader className="flex flex-row items-center justify-between border-b border-[#e8e4dc] px-6 py-4 space-y-0 text-left bg-white dark:bg-stone-900 dark:border-stone-800">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 text-teal-600 dark:bg-teal-950/60 dark:text-teal-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400 shrink-0">
               <ClipboardCheck className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 id="exit-ticket-dialog-title" className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <DialogTitle className="text-lg font-bold text-stone-900 dark:text-stone-100">
                   Exit Ticket / Refleksi Akhir
-                </h2>
+                </DialogTitle>
                 {activity && (
                   <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
                       activity.status === 'OPEN'
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400'
                         : activity.status === 'CLOSED'
-                          ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400'
-                          : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-400'
+                          : 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
                     }`}
                   >
                     {activity.status === 'OPEN' && 'Terbuka'}
@@ -237,33 +238,26 @@ export function TeacherExitTicketPanel({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <DialogDescription className="text-xs text-stone-500 dark:text-stone-400">
                 Ukur pemahaman dan kumpulkan umpan balik singkat sebelum kelas berakhir
-              </p>
+              </DialogDescription>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pr-6">
             {activity && activity.status === 'CLOSED' && !showCreateForm && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCreateForm(true)}
-                className="text-xs gap-1.5"
+                className="text-xs font-semibold gap-1.5 border-stone-300 dark:border-stone-700"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Exit Ticket Baru
               </Button>
             )}
-            <button
-              onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
-              aria-label="Tutup panel"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
-        </div>
+        </DialogHeader>
 
         {/* Content Container */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -271,64 +265,66 @@ export function TeacherExitTicketPanel({
           {isFormActive ? (
             <form onSubmit={handleCreateSubmit} className="space-y-5">
               {/* Presets */}
-              <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-stone-850 p-3.5 rounded-2xl border border-[#e8e4dc] dark:border-stone-800 shadow-2xs">
+                <span className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5 mr-1">
                   <Sparkles className="h-3.5 w-3.5 text-teal-600" />
-                  Gunakan Preset Cepat:
+                  Preset Cepat:
                 </span>
                 <button
                   type="button"
                   onClick={applyPresetUnderstanding}
-                  className="rounded-lg bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-medium border border-slate-200 dark:border-slate-700 hover:border-teal-500 text-slate-700 dark:text-slate-200 transition-colors"
+                  className="rounded-xl bg-stone-50 dark:bg-stone-800 px-3 py-1.5 text-xs font-semibold border border-[#e8e4dc] dark:border-stone-700 hover:border-teal-500 text-stone-700 dark:text-stone-200 transition-colors"
                 >
                   Cek Pemahaman (Skala + Teks)
                 </button>
                 <button
                   type="button"
                   onClick={applyPresetReflection}
-                  className="rounded-lg bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-medium border border-slate-200 dark:border-slate-700 hover:border-teal-500 text-slate-700 dark:text-slate-200 transition-colors"
+                  className="rounded-xl bg-stone-50 dark:bg-stone-800 px-3 py-1.5 text-xs font-semibold border border-[#e8e4dc] dark:border-stone-700 hover:border-teal-500 text-stone-700 dark:text-stone-200 transition-colors"
                 >
                   Refleksi Pelajaran (Bernama)
                 </button>
               </div>
 
               {/* Title & Settings */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Judul Exit Ticket
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    maxLength={100}
-                    placeholder="Contoh: Refleksi Pembelajaran Hari Ini"
-                    className="w-full text-sm rounded-lg border border-slate-300 p-2.5 bg-white text-slate-900 focus:border-teal-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                  />
-                </div>
+              <div className="rounded-2xl border border-[#e8e4dc] bg-white p-5 dark:border-stone-800 dark:bg-stone-850 shadow-2xs space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">
+                      Judul Exit Ticket
+                    </label>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      maxLength={100}
+                      placeholder="Contoh: Refleksi Pembelajaran Hari Ini"
+                      className="w-full text-sm rounded-xl border border-stone-200 p-3 bg-stone-50/60 text-stone-900 focus:border-teal-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-600/20 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+                    />
+                  </div>
 
-                <div className="flex items-center gap-2 pt-6">
-                  <input
-                    type="checkbox"
-                    id="etAnonymous"
-                    checked={isAnonymous}
-                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-                  />
-                  <label
-                    htmlFor="etAnonymous"
-                    className="text-xs font-medium cursor-pointer text-slate-700 dark:text-slate-300"
-                  >
-                    Kumpulkan Secara Anonim
-                  </label>
+                  <div className="flex items-center gap-2.5 sm:pt-6">
+                    <input
+                      type="checkbox"
+                      id="etAnonymous"
+                      checked={isAnonymous}
+                      onChange={(e) => setIsAnonymous(e.target.checked)}
+                      className="h-4 w-4 rounded border-stone-300 text-teal-600 focus:ring-teal-500"
+                    />
+                    <label
+                      htmlFor="etAnonymous"
+                      className="text-xs font-bold cursor-pointer text-stone-700 dark:text-stone-300"
+                    >
+                      Kumpulkan Secara Anonim
+                    </label>
+                  </div>
                 </div>
               </div>
 
               {/* Questions List */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
                     Daftar Pertanyaan ({questions.length}/3)
                   </h4>
                   {questions.length < 3 && (
@@ -337,9 +333,9 @@ export function TeacherExitTicketPanel({
                       variant="outline"
                       size="sm"
                       onClick={handleAddQuestion}
-                      className="text-xs gap-1 h-7 border-teal-500 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/40"
+                      className="text-xs font-semibold gap-1 h-8 rounded-xl border-teal-600 text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/40"
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-3.5 w-3.5" />
                       Tambah Pertanyaan
                     </Button>
                   )}
@@ -348,11 +344,11 @@ export function TeacherExitTicketPanel({
                 {questions.map((q, idx) => (
                   <div
                     key={idx}
-                    className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-850/50 space-y-3"
+                    className="rounded-2xl border border-[#e8e4dc] bg-white p-5 dark:border-stone-800 dark:bg-stone-850 shadow-2xs space-y-3.5"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-700 text-xs font-bold text-white">
                           {idx + 1}
                         </span>
                         <select
@@ -362,7 +358,7 @@ export function TeacherExitTicketPanel({
                               type: e.target.value as ExitTicketQuestionType,
                             })
                           }
-                          className="text-xs font-semibold rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+                          className="text-xs font-bold rounded-lg border border-stone-200 bg-stone-50/70 p-2 text-stone-800 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
                         >
                           <option value="SCALE">Skala Nilai (1–5)</option>
                           <option value="SHORT_TEXT">Teks Singkat</option>
@@ -370,15 +366,15 @@ export function TeacherExitTicketPanel({
                         </select>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1 text-xs cursor-pointer text-slate-600 dark:text-slate-400">
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-stone-600 dark:text-stone-400">
                           <input
                             type="checkbox"
                             checked={q.required}
                             onChange={(e) =>
                               handleUpdateQuestion(idx, { required: e.target.checked })
                             }
-                            className="h-3.5 w-3.5 rounded border-slate-300 text-teal-600"
+                            className="h-4 w-4 rounded border-stone-300 text-teal-600"
                           />
                           Wajib
                         </label>
@@ -386,7 +382,7 @@ export function TeacherExitTicketPanel({
                           <button
                             type="button"
                             onClick={() => handleRemoveQuestion(idx)}
-                            className="text-slate-400 hover:text-red-500 p-1"
+                            className="min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-400 hover:text-red-600 p-1"
                             title="Hapus pertanyaan"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -402,15 +398,17 @@ export function TeacherExitTicketPanel({
                         onChange={(e) => handleUpdateQuestion(idx, { prompt: e.target.value })}
                         maxLength={300}
                         placeholder="Tuliskan pertanyaan refleksi di sini..."
-                        className="w-full text-sm rounded-lg border border-slate-300 p-2 bg-white text-slate-900 focus:border-teal-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                        className="w-full text-sm rounded-xl border border-stone-200 p-3 bg-stone-50/60 text-stone-900 focus:border-teal-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-600/20 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
                       />
                     </div>
 
                     {/* Scale Extra Configuration */}
                     {q.type === 'SCALE' && (
-                      <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
+                      <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
                         <div>
-                          <label className="text-slate-500 block mb-0.5">Label Nilai 1 (Min)</label>
+                          <label className="text-stone-500 font-medium block mb-1">
+                            Label Nilai 1 (Min)
+                          </label>
                           <input
                             type="text"
                             value={q.minLabel}
@@ -418,11 +416,13 @@ export function TeacherExitTicketPanel({
                               handleUpdateQuestion(idx, { minLabel: e.target.value })
                             }
                             placeholder="Contoh: Belum paham"
-                            className="w-full rounded border border-slate-300 p-1.5 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                            className="w-full rounded-lg border border-stone-200 p-2 bg-stone-50/60 text-stone-800 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
                           />
                         </div>
                         <div>
-                          <label className="text-slate-500 block mb-0.5">Label Nilai 5 (Max)</label>
+                          <label className="text-stone-500 font-medium block mb-1">
+                            Label Nilai 5 (Max)
+                          </label>
                           <input
                             type="text"
                             value={q.maxLabel}
@@ -430,7 +430,7 @@ export function TeacherExitTicketPanel({
                               handleUpdateQuestion(idx, { maxLabel: e.target.value })
                             }
                             placeholder="Contoh: Sangat paham"
-                            className="w-full rounded border border-slate-300 p-1.5 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                            className="w-full rounded-lg border border-stone-200 p-2 bg-stone-50/60 text-stone-800 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
                           />
                         </div>
                       </div>
@@ -439,7 +439,9 @@ export function TeacherExitTicketPanel({
                     {/* Multiple Choice Options Configuration */}
                     {q.type === 'MULTIPLE_CHOICE' && (
                       <div className="space-y-2 pt-1">
-                        <span className="text-xs text-slate-500 block">Pilihan Jawaban:</span>
+                        <span className="text-xs text-stone-500 font-semibold block">
+                          Pilihan Jawaban:
+                        </span>
                         {q.options.map((optText, optIdx) => (
                           <div key={optIdx} className="flex items-center gap-2">
                             <input
@@ -452,7 +454,7 @@ export function TeacherExitTicketPanel({
                               }}
                               maxLength={100}
                               placeholder={`Opsi ${optIdx + 1}`}
-                              className="flex-1 text-xs rounded border border-slate-300 p-1.5 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                              className="flex-1 text-xs rounded-lg border border-stone-200 p-2 bg-stone-50/60 text-stone-800 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
                             />
                             {q.options.length > 2 && (
                               <button
@@ -462,7 +464,7 @@ export function TeacherExitTicketPanel({
                                     options: q.options.filter((_, oIdx) => oIdx !== optIdx),
                                   });
                                 }}
-                                className="text-slate-400 hover:text-red-500"
+                                className="min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-400 hover:text-red-600"
                               >
                                 ✕
                               </button>
@@ -477,7 +479,7 @@ export function TeacherExitTicketPanel({
                                 options: [...q.options, `Opsi ${q.options.length + 1}`],
                               });
                             }}
-                            className="text-xs text-teal-600 font-medium hover:underline"
+                            className="text-xs text-teal-700 font-bold hover:underline pt-1"
                           >
                             + Tambah Opsi
                           </button>
@@ -495,15 +497,16 @@ export function TeacherExitTicketPanel({
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowCreateForm(false)}
+                    className="text-stone-600 hover:text-stone-900 font-semibold"
                   >
                     Batal
                   </Button>
                 )}
                 <Button
                   type="submit"
-                  size="sm"
+                  size="md"
                   disabled={questions.some((q) => !q.prompt.trim())}
-                  className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5"
+                  className="bg-teal-700 hover:bg-teal-800 text-white gap-2 font-bold px-5 rounded-xl shadow-xs"
                 >
                   <Play className="h-4 w-4" />
                   Simpan & Siapkan Exit Ticket
@@ -514,22 +517,22 @@ export function TeacherExitTicketPanel({
             /* Active Activity & Results View */
             <div className="space-y-6">
               {/* Activity Banner */}
-              <div className="rounded-xl border border-teal-200 bg-teal-50/60 p-5 dark:border-teal-900/60 dark:bg-teal-950/20">
+              <div className="rounded-2xl border border-teal-200/80 bg-teal-50/40 p-5 sm:p-6 dark:border-teal-900/40 dark:bg-teal-950/20 shadow-2xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-400">
+                    <span className="text-xs font-bold uppercase tracking-wider text-teal-800 dark:text-teal-400">
                       Topik Refleksi
                     </span>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-base sm:text-lg font-bold text-stone-900 dark:text-stone-100 mt-0.5">
                       {activity.title}
                     </h3>
-                    <div className="flex items-center gap-3 pt-1 text-xs text-slate-600 dark:text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <ShieldCheck className="h-3.5 w-3.5 text-slate-500" />
+                    <div className="flex items-center gap-3 pt-1.5 text-xs text-stone-600 dark:text-stone-400">
+                      <span className="flex items-center gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5 text-stone-500" />
                         {activity.isAnonymous ? 'Anonim' : 'Nama Peserta'}
                       </span>
                       <span>•</span>
-                      <span>{activity.questions.length} Pertanyaan</span>
+                      <span className="font-semibold">{activity.questions.length} Pertanyaan</span>
                     </div>
                   </div>
 
@@ -538,7 +541,7 @@ export function TeacherExitTicketPanel({
                       <Button
                         size="sm"
                         onClick={onOpenActivity}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs font-bold rounded-xl"
                       >
                         <Play className="h-3.5 w-3.5" />
                         Buka Exit Ticket
@@ -549,7 +552,7 @@ export function TeacherExitTicketPanel({
                         variant="outline"
                         size="sm"
                         onClick={onCloseActivity}
-                        className="gap-1.5 text-xs border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/40"
+                        className="gap-1.5 text-xs font-semibold rounded-xl border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/40"
                       >
                         <StopCircle className="h-3.5 w-3.5" />
                         Tutup Respon
@@ -559,17 +562,17 @@ export function TeacherExitTicketPanel({
                 </div>
 
                 {/* Progress bar */}
-                <div className="mt-4 pt-3 border-t border-teal-100 dark:border-teal-900/60">
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5 text-teal-600" />
+                <div className="mt-4 pt-3.5 border-t border-teal-100 dark:border-teal-900/60">
+                  <div className="flex items-center justify-between text-xs mb-1.5 font-bold">
+                    <span className="text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-teal-700" />
                       Respon Masuk: {responseCount} / {totalExpected} peserta
                     </span>
-                    <span className="font-bold text-teal-700 dark:text-teal-400">
+                    <span className="text-teal-800 dark:text-teal-400">
                       {completionRate}% selesai
                     </span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                  <div className="w-full h-2.5 rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden">
                     <div
                       className="h-full bg-teal-600 transition-all duration-300 rounded-full"
                       style={{ width: `${completionRate}%` }}
@@ -586,11 +589,11 @@ export function TeacherExitTicketPanel({
                   return (
                     <div
                       key={question.id}
-                      className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/80 shadow-xs space-y-4"
+                      className="rounded-2xl border border-[#e8e4dc] bg-white p-5 sm:p-6 dark:border-stone-800 dark:bg-stone-850 shadow-2xs space-y-4"
                     >
-                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <div className="flex items-start justify-between gap-3 border-b border-stone-100 dark:border-stone-800 pb-3">
                         <div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                          <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
                             Pertanyaan #{idx + 1} •{' '}
                             {question.type === 'SCALE'
                               ? 'Skala 1-5'
@@ -598,28 +601,28 @@ export function TeacherExitTicketPanel({
                                 ? 'Pilihan Ganda'
                                 : 'Teks Singkat'}
                           </span>
-                          <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                          <h4 className="text-sm sm:text-base font-bold text-stone-900 dark:text-stone-100 mt-1">
                             {question.prompt}
                           </h4>
                         </div>
-                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        <span className="text-xs font-bold text-stone-500 dark:text-stone-400 whitespace-nowrap bg-stone-100 dark:bg-stone-800 px-2.5 py-1 rounded-full">
                           {qAgg?.totalResponses || 0} jawaban
                         </span>
                       </div>
 
                       {/* Scale Aggregate Visualization */}
                       {question.type === 'SCALE' && (
-                        <div className="space-y-3">
+                        <div className="space-y-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-lg border border-amber-200 dark:border-amber-800 font-bold text-base">
-                              <Star className="h-4 w-4 fill-current" />
+                            <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400 px-3.5 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800 font-bold text-base shadow-2xs">
+                              <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
                               {qAgg?.scaleAverage ? qAgg.scaleAverage.toFixed(1) : '0.0'}
-                              <span className="text-xs font-normal text-slate-400">/ 5.0</span>
+                              <span className="text-xs font-normal text-stone-400">/ 5.0</span>
                             </div>
-                            <span className="text-xs text-slate-500">Rata-rata kelas</span>
+                            <span className="text-xs text-stone-500 font-medium">Rata-rata kelas</span>
                           </div>
 
-                          <div className="space-y-1.5 pt-1">
+                          <div className="space-y-2 pt-1">
                             {[5, 4, 3, 2, 1].map((val) => {
                               const count = qAgg?.scaleDistribution?.[val] || 0;
                               const total = qAgg?.totalResponses || 0;
@@ -627,16 +630,16 @@ export function TeacherExitTicketPanel({
 
                               return (
                                 <div key={val} className="flex items-center gap-3 text-xs">
-                                  <span className="w-10 font-bold text-slate-600 dark:text-slate-300">
+                                  <span className="w-12 font-bold text-stone-700 dark:text-stone-300">
                                     Nilai {val}
                                   </span>
-                                  <div className="flex-1 h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                  <div className="flex-1 h-3 rounded-full bg-stone-100 dark:bg-stone-800 overflow-hidden">
                                     <div
                                       className="h-full bg-amber-500 rounded-full transition-all duration-300"
                                       style={{ width: `${pct}%` }}
                                     />
                                   </div>
-                                  <span className="w-16 text-right text-slate-500">
+                                  <span className="w-20 text-right text-stone-500 font-medium">
                                     {count} ({pct}%)
                                   </span>
                                 </div>
@@ -648,21 +651,21 @@ export function TeacherExitTicketPanel({
 
                       {/* Multiple Choice Aggregate Visualization */}
                       {question.type === 'MULTIPLE_CHOICE' && (
-                        <div className="space-y-2">
+                        <div className="space-y-2.5">
                           {(question.options || []).map((opt) => {
                             const optData = qAgg?.choiceDistribution?.[opt.id];
                             const count = optData?.count || 0;
                             const pct = optData?.percentage || 0;
 
                             return (
-                              <div key={opt.id} className="space-y-1">
-                                <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
+                              <div key={opt.id} className="space-y-1.5">
+                                <div className="flex justify-between text-xs font-semibold text-stone-700 dark:text-stone-300">
                                   <span>{opt.text}</span>
-                                  <span className="text-slate-500">
+                                  <span className="text-stone-500">
                                     {count} ({pct}%)
                                   </span>
                                 </div>
-                                <div className="w-full h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                <div className="w-full h-3 rounded-full bg-stone-100 dark:bg-stone-800 overflow-hidden">
                                   <div
                                     className="h-full bg-teal-600 rounded-full transition-all duration-300"
                                     style={{ width: `${pct}%` }}
@@ -678,7 +681,7 @@ export function TeacherExitTicketPanel({
                       {question.type === 'SHORT_TEXT' && (
                         <div>
                           {!qAgg?.textResponses || qAgg.textResponses.length === 0 ? (
-                            <p className="text-xs text-slate-400 italic py-2">
+                            <p className="text-xs text-stone-400 italic py-2">
                               Belum ada respon tertulis yang masuk.
                             </p>
                           ) : (
@@ -686,10 +689,10 @@ export function TeacherExitTicketPanel({
                               {qAgg.textResponses.map((item) => (
                                 <div
                                   key={item.id}
-                                  className="rounded-lg border border-slate-100 bg-slate-50/70 p-3 text-xs dark:border-slate-800 dark:bg-slate-800/40"
+                                  className="rounded-xl border border-stone-200/80 bg-stone-50/60 p-3.5 text-xs dark:border-stone-800 dark:bg-stone-900/60 shadow-2xs"
                                 >
-                                  <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-                                    <span className="font-semibold text-slate-600 dark:text-slate-300">
+                                  <div className="flex items-center justify-between text-xs text-stone-400 mb-1.5">
+                                    <span className="font-bold text-stone-700 dark:text-stone-300">
                                       {item.authorName}
                                     </span>
                                     <span className="flex items-center gap-1">
@@ -697,7 +700,7 @@ export function TeacherExitTicketPanel({
                                       {formatElapsed(item.submittedAt)}
                                     </span>
                                   </div>
-                                  <p className="text-slate-800 dark:text-slate-200 break-words leading-relaxed">
+                                  <p className="text-stone-800 dark:text-stone-200 break-words leading-relaxed">
                                     {item.content}
                                   </p>
                                 </div>
@@ -713,7 +716,7 @@ export function TeacherExitTicketPanel({
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

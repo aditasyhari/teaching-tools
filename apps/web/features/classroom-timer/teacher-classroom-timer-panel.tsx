@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Clock,
-  X,
   Play,
   Pause,
   RotateCcw,
@@ -12,7 +11,15 @@ import {
   AlertCircle,
   Tag,
 } from 'lucide-react';
-import { Button, Badge } from '@walikelas/ui';
+import {
+  Button,
+  Badge,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@walikelas/ui';
 import type { ClassroomTimerState, ClassroomTimerVisibility } from '@walikelas/types';
 import { formatTime } from './use-classroom-timer';
 
@@ -119,25 +126,22 @@ export function TeacherClassroomTimerPanel({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="classroom-timer-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in"
-    >
-      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950/60">
+        <DialogHeader className="px-6 py-4 border-b border-border flex flex-row items-center justify-between text-left space-y-0 bg-muted/20">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center shadow-xs shrink-0">
               <Clock className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 id="classroom-timer-dialog-title" className="text-lg font-black text-slate-900 dark:text-slate-100">
+                <DialogTitle className="text-lg font-black text-foreground">
                   Timer Kelas
-                </h2>
+                </DialogTitle>
                 {isRunning && (
                   <Badge variant="success" size="sm">
                     Berjalan
@@ -159,21 +163,12 @@ export function TeacherClassroomTimerPanel({
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <DialogDescription className="text-xs text-muted-foreground">
                 Hitung mundur realtime sinkron untuk semua perangkat di kelas
-              </p>
+              </DialogDescription>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors"
-            title="Tutup panel"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        </DialogHeader>
 
         {error && (
           <div className="m-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-400 flex items-center justify-between text-xs">
@@ -451,7 +446,7 @@ export function TeacherClassroomTimerPanel({
             </form>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

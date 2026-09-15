@@ -23,7 +23,7 @@ describe('HomePage', () => {
     render(<HomePage />);
     expect(
       screen.getByRole('heading', {
-        name: /Tools praktis untuk membuat kegiatan mengajar lebih/i,
+        name: /Perkakas kecil\.\s+Kelas yang lebih hidup/i,
       }),
     ).toBeDefined();
 
@@ -40,7 +40,7 @@ describe('HomePage', () => {
 
   it('renders tool collections and how-it-works section', () => {
     render(<HomePage />);
+    expect(screen.getByText(/Semua perkakas yang Anda butuhkan di kelas/i)).toBeDefined();
     expect(screen.getByText(/Tiga Langkah Sederhana Menghidupkan Kelas/i)).toBeDefined();
-    expect(screen.getByText(/Koleksi Perkakas Mengajar Terpadu/i)).toBeDefined();
   });
 });

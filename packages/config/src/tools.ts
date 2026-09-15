@@ -1,12 +1,30 @@
-import type { ToolMetadata } from '@walikelas/types';
+import type { ToolMetadata, TeacherToolCategory } from '@walikelas/types';
+
+export interface TeacherCategoryDef {
+  id: 'ALL' | TeacherToolCategory;
+  label: string;
+}
+
+export const TEACHER_CATEGORIES: readonly TeacherCategoryDef[] = [
+  { id: 'ALL', label: 'Semua' },
+  { id: 'CLASS_MANAGEMENT', label: 'Manajemen Kelas' },
+  { id: 'PARTICIPATION_RESPONSE', label: 'Partisipasi & Respon' },
+  { id: 'DISCUSSION_REFLECTION', label: 'Diskusi & Refleksi' },
+  { id: 'CONTENT_NOTES', label: 'Materi & Catatan' },
+] as const;
 
 export const TOOLS: ToolMetadata[] = [
-  // P0 Local Tools (Phase 4: Available)
+  // 1. Timer (Featured, Class Management)
   {
     id: 'timer',
     name: 'Timer',
     description: 'Stopwatch, hitung mundur, dan pengingat waktu pembelajaran.',
+    featuredDescription: 'Atur ritme kegiatan kelas.',
     category: 'LOCAL',
+    teacherCategory: 'CLASS_MANAGEMENT',
+    categoryLabel: 'Manajemen Kelas',
+    featured: true,
+    order: 1,
     isInteractive: false,
     requiresAuth: false,
     priority: 'P0',
@@ -14,11 +32,18 @@ export const TOOLS: ToolMetadata[] = [
     iconName: 'timer',
     status: 'AVAILABLE',
   },
+
+  // 2. Random Picker (Featured, Class Management)
   {
     id: 'random-picker',
     name: 'Random Picker',
     description: 'Pemilih acak nama siswa, giliran, atau kelompok.',
+    featuredDescription: 'Pilih siswa secara acak.',
     category: 'LOCAL',
+    teacherCategory: 'CLASS_MANAGEMENT',
+    categoryLabel: 'Manajemen Kelas',
+    featured: true,
+    order: 2,
     isInteractive: false,
     requiresAuth: false,
     priority: 'P0',
@@ -26,11 +51,17 @@ export const TOOLS: ToolMetadata[] = [
     iconName: 'random-picker',
     status: 'AVAILABLE',
   },
+
+  // 3. Group Maker (Class Management)
   {
     id: 'group-maker',
     name: 'Group Maker',
     description: 'Pembagi kelompok otomatis berdasarkan jumlah anggota atau jumlah tim.',
     category: 'LOCAL',
+    teacherCategory: 'CLASS_MANAGEMENT',
+    categoryLabel: 'Manajemen Kelas',
+    featured: false,
+    order: 3,
     isInteractive: false,
     requiresAuth: false,
     priority: 'P0',
@@ -38,11 +69,17 @@ export const TOOLS: ToolMetadata[] = [
     iconName: 'group-maker',
     status: 'AVAILABLE',
   },
+
+  // 4. Scoreboard (Class Management)
   {
     id: 'scoreboard',
     name: 'Scoreboard',
     description: 'Papan skor sederhana untuk kompetisi tim di kelas.',
     category: 'LOCAL',
+    teacherCategory: 'CLASS_MANAGEMENT',
+    categoryLabel: 'Manajemen Kelas',
+    featured: false,
+    order: 4,
     isInteractive: false,
     requiresAuth: false,
     priority: 'P1',
@@ -50,11 +87,17 @@ export const TOOLS: ToolMetadata[] = [
     iconName: 'scoreboard',
     status: 'AVAILABLE',
   },
+
+  // 5. Teacher Notes (Content & Notes)
   {
     id: 'teacher-notes',
     name: 'Teacher Notes',
     description: 'Catatan cepat guru selama sesi pembelajaran berlangsung.',
     category: 'LOCAL',
+    teacherCategory: 'CONTENT_NOTES',
+    categoryLabel: 'Materi & Catatan',
+    featured: false,
+    order: 5,
     isInteractive: false,
     requiresAuth: true,
     priority: 'P0',
@@ -63,12 +106,17 @@ export const TOOLS: ToolMetadata[] = [
     status: 'AVAILABLE',
   },
 
-  // Interactive Tools (Upcoming)
+  // 6. Live Quiz (Featured, Participation & Response)
   {
     id: 'live-quiz',
     name: 'Live Quiz',
     description: 'Kuis interaktif langsung dengan leaderboard dan feedback instan.',
+    featuredDescription: 'Buat kuis dan mainkan bersama kelas.',
     category: 'INTERACTIVE',
+    teacherCategory: 'PARTICIPATION_RESPONSE',
+    categoryLabel: 'Partisipasi & Respon',
+    featured: true,
+    order: 6,
     isInteractive: true,
     requiresAuth: true,
     priority: 'P0',
@@ -76,11 +124,17 @@ export const TOOLS: ToolMetadata[] = [
     iconName: 'live-quiz',
     status: 'AVAILABLE',
   },
+
+  // 7. Live Poll (Participation & Response)
   {
     id: 'live-poll',
     name: 'Live Poll',
     description: 'Jajak pendapat kilat untuk mengukur pemahaman atau opini siswa.',
     category: 'INTERACTIVE',
+    teacherCategory: 'PARTICIPATION_RESPONSE',
+    categoryLabel: 'Partisipasi & Respon',
+    featured: false,
+    order: 7,
     isInteractive: true,
     requiresAuth: true,
     priority: 'P0',
@@ -88,11 +142,17 @@ export const TOOLS: ToolMetadata[] = [
     iconName: 'live-poll',
     status: 'AVAILABLE',
   },
+
+  // 8. Raise Hand (Participation & Response)
   {
     id: 'raise-hand',
     name: 'Raise Hand',
     description: 'Antrean angkat tangan digital untuk partisipasi teratur.',
     category: 'INTERACTIVE',
+    teacherCategory: 'PARTICIPATION_RESPONSE',
+    categoryLabel: 'Partisipasi & Respon',
+    featured: false,
+    order: 8,
     isInteractive: true,
     requiresAuth: true,
     priority: 'P1',
@@ -100,11 +160,17 @@ export const TOOLS: ToolMetadata[] = [
     iconName: 'raise-hand',
     status: 'AVAILABLE',
   },
+
+  // 9. Question Box (Discussion & Reflection)
   {
     id: 'question-box',
     name: 'Question Box',
     description: 'Kotak pertanyaan anonim atau bernama dari siswa.',
     category: 'INTERACTIVE',
+    teacherCategory: 'DISCUSSION_REFLECTION',
+    categoryLabel: 'Diskusi & Refleksi',
+    featured: false,
+    order: 9,
     isInteractive: true,
     requiresAuth: true,
     priority: 'P1',
@@ -112,11 +178,17 @@ export const TOOLS: ToolMetadata[] = [
     iconName: 'question-box',
     status: 'AVAILABLE',
   },
+
+  // 10. Brainstorm Board (Discussion & Reflection)
   {
     id: 'brainstorm-board',
     name: 'Brainstorm Board',
     description: 'Papan ide kolaboratif untuk mengumpulkan gagasan kelas.',
     category: 'INTERACTIVE',
+    teacherCategory: 'DISCUSSION_REFLECTION',
+    categoryLabel: 'Diskusi & Refleksi',
+    featured: false,
+    order: 10,
     isInteractive: true,
     requiresAuth: true,
     priority: 'P1',
@@ -124,11 +196,17 @@ export const TOOLS: ToolMetadata[] = [
     iconName: 'brainstorm-board',
     status: 'AVAILABLE',
   },
+
+  // 11. Word Cloud (Discussion & Reflection)
   {
     id: 'word-cloud',
     name: 'Word Cloud',
     description: 'Visualisasi kata dinamis dari respon singkat seluruh kelas.',
     category: 'INTERACTIVE',
+    teacherCategory: 'DISCUSSION_REFLECTION',
+    categoryLabel: 'Diskusi & Refleksi',
+    featured: false,
+    order: 11,
     isInteractive: true,
     requiresAuth: true,
     priority: 'P1',
@@ -136,11 +214,17 @@ export const TOOLS: ToolMetadata[] = [
     iconName: 'word-cloud',
     status: 'COMING_SOON',
   },
+
+  // 12. Exit Ticket (Discussion & Reflection)
   {
     id: 'exit-ticket',
     name: 'Exit Ticket',
     description: 'Refleksi singkat di akhir pelajaran sebelum siswa meninggalkan kelas.',
     category: 'INTERACTIVE',
+    teacherCategory: 'DISCUSSION_REFLECTION',
+    categoryLabel: 'Diskusi & Refleksi',
+    featured: false,
+    order: 12,
     isInteractive: true,
     requiresAuth: true,
     priority: 'P1',
@@ -149,12 +233,16 @@ export const TOOLS: ToolMetadata[] = [
     status: 'AVAILABLE',
   },
 
-  // Content Tool (Upcoming)
+  // 13. Flashcards (Content & Notes)
   {
     id: 'flashcards',
     name: 'Flashcards',
     description: 'Kartu pengingat materi untuk pengulangan dan penguatan konsep.',
     category: 'CONTENT',
+    teacherCategory: 'CONTENT_NOTES',
+    categoryLabel: 'Materi & Catatan',
+    featured: false,
+    order: 13,
     isInteractive: false,
     requiresAuth: false,
     priority: 'P2',
