@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SessionsGateway } from '../sessions.gateway';
+import { JoinCodeRateLimitGuard } from '../guards/join-code-rate-limit.guard';
 
 describe('SessionsGateway', () => {
   let gateway: SessionsGateway;
@@ -19,6 +20,7 @@ describe('SessionsGateway', () => {
   let mockSocket: any;
 
   beforeEach(() => {
+    JoinCodeRateLimitGuard.reset();
     mockServer = {
       to: vi.fn().mockReturnThis(),
       emit: vi.fn(),
@@ -38,12 +40,14 @@ describe('SessionsGateway', () => {
       verifyJoinCode: vi.fn(),
       getTeacherSnapshot: vi.fn(),
       getParticipantSnapshot: vi.fn(),
+      getProjectorSnapshot: vi.fn(),
       startSession: vi.fn(),
       endSession: vi.fn(),
     };
 
     mockMemory = {
       registerTeacher: vi.fn(),
+      registerProjector: vi.fn(),
       addParticipant: vi.fn(),
       getOnlineParticipantCount: vi.fn().mockReturnValue(1),
       handleDisconnect: vi.fn(),
@@ -51,6 +55,9 @@ describe('SessionsGateway', () => {
       getParticipants: vi.fn().mockReturnValue([]),
       getParticipant: vi.fn(),
       getSocketEntry: vi.fn(),
+      getTeacherSockets: vi.fn().mockReturnValue([]),
+      getProjectorSockets: vi.fn().mockReturnValue([]),
+      clearSession: vi.fn(),
     };
 
     mockQuizzesService = {
@@ -320,6 +327,111 @@ describe('SessionsGateway', () => {
         }),
       );
     });
+
+    it('SEC-003: rejects participant join if displayName uses reserved role name', async () => {
+      await gateway.handleJoin(mockSocket as any, {
+        joinCode: 'AB7K42',
+        displayName: 'Guru Matematika',
+      });
+
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'session:error',
+        expect.objectContaining({
+          code: 'VALIDATION_ERROR',
+          message: expect.stringContaining('dicadangkan'),
+        }),
+      );
+    });
+
+    it('SEC-001: rejects participant join when IP rate limit is exceeded', async () => {
+      mockSocket.handshake.headers['x-forwarded-for'] = '203.0.113.195';
+
+      // Exhaust 15 allowed attempts
+      for (let i = 0; i < 15; i++) {
+        JoinCodeRateLimitGuard.check('203.0.113.195');
+      }
+
+      await gateway.handleJoin(mockSocket as any, {
+        joinCode: 'AB7K42',
+        displayName: 'Siswa Rajin',
+      });
+
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'session:error',
+        expect.objectContaining({
+          code: 'TOO_MANY_REQUESTS',
+          message: expect.stringContaining('Terlalu banyak percobaan'),
+        }),
+      );
+      expect(mockSessionsService.verifyJoinCode).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleJoin (Projector)', () => {
+    it('allows projector with valid joinCode to join and emit projector snapshot without creating participant or emitting participant-joined', async () => {
+      mockSessionsService.verifyJoinCode.mockResolvedValue({
+        id: 'sess-123',
+        title: 'Kuis IPA',
+        joinCode: 'AB7K42',
+        status: 'WAITING',
+      });
+
+      mockSessionsService.getProjectorSnapshot.mockResolvedValue({
+        id: 'sess-123',
+        title: 'Kuis IPA',
+        joinCode: 'AB7K42',
+        status: 'WAITING',
+        participantCount: 0,
+        serverTime: '2026-09-17T12:00:00Z',
+      });
+
+      await gateway.handleJoin(mockSocket as any, {
+        joinCode: 'AB7K42',
+        isProjector: true,
+      });
+
+      expect(mockMemory.registerProjector).toHaveBeenCalledWith('sess-123', 'socket-client-1');
+      expect(mockMemory.addParticipant).not.toHaveBeenCalled();
+      expect(mockSocket.join).toHaveBeenCalledWith('session:sess-123');
+      expect(mockSocket.join).toHaveBeenCalledWith('session:sess-123:projectors');
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'session:state',
+        expect.objectContaining({
+          id: 'sess-123',
+          joinCode: 'AB7K42',
+          participantCount: 0,
+        }),
+      );
+      // Projector join must NEVER emit session:participant-joined
+      expect(mockServer.emit).not.toHaveBeenCalled();
+    });
+
+    it('rejects projector join if joinCode is missing or invalid format', async () => {
+      await gateway.handleJoin(mockSocket as any, {
+        joinCode: 'INV',
+        isProjector: true,
+      });
+
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'session:error',
+        expect.objectContaining({
+          code: 'VALIDATION_ERROR',
+        }),
+      );
+      expect(mockSessionsService.verifyJoinCode).not.toHaveBeenCalled();
+    });
+
+    it('does not emit session:participant-left when projector disconnects', () => {
+      mockMemory.handleDisconnect.mockReturnValue({
+        sessionId: 'sess-123',
+        role: 'PROJECTOR',
+      });
+
+      gateway.handleDisconnect(mockSocket as any);
+
+      expect(mockServer.to).not.toHaveBeenCalled();
+      expect(mockServer.emit).not.toHaveBeenCalled();
+    });
   });
 
   describe('handleStart & handleEnd (Security: Teacher Auth Enforcement)', () => {
@@ -389,6 +501,7 @@ describe('SessionsGateway', () => {
       await gateway.handleEnd(mockSocket as any, { sessionId: 'sess-123' });
 
       expect(mockSessionsService.endSession).toHaveBeenCalledWith('sess-123', 'teacher-1');
+      expect(mockMemory.clearSession).toHaveBeenCalledWith('sess-123');
       expect(mockQuizRuntime.clearQuiz).toHaveBeenCalledWith('sess-123');
       expect(mockServer.to).toHaveBeenCalledWith('session:sess-123');
       expect(mockServer.emit).toHaveBeenCalledWith('session:ended', expect.any(Object));

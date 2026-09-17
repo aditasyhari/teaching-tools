@@ -64,6 +64,47 @@ describe('joinSessionSchema', () => {
     const result = joinSessionSchema.safeParse(input);
     expect(result.success).toBe(false);
   });
+
+  it('SEC-003: should reject reserved display names impersonating staff or system', () => {
+    const reservedNames = [
+      'guru',
+      'Guru',
+      'Pak Guru',
+      'Bu Guru',
+      'admin',
+      'ADMIN',
+      'Administrator',
+      'operator',
+      'system',
+      'Sistem',
+      'walikelas',
+      'Wali Kelas',
+      'host',
+      'moderator',
+    ];
+
+    for (const name of reservedNames) {
+      const res = joinSessionSchema.safeParse({
+        code: 'ABC123',
+        displayName: name,
+      });
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error.issues[0]?.message).toContain('dicadangkan');
+      }
+    }
+  });
+
+  it('should accept ordinary student names and projector display name', () => {
+    const validNames = ['Ahmad Dahlan', 'Siti Rahma', 'Budi Santoso', 'Layar Proyektor', 'Agus'];
+    for (const name of validNames) {
+      const res = joinSessionSchema.safeParse({
+        code: 'ABC123',
+        displayName: name,
+      });
+      expect(res.success).toBe(true);
+    }
+  });
 });
 
 describe('createSessionSchema', () => {

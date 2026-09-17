@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -10,7 +11,6 @@ import {
   LineChart,
   Activity,
   ShieldAlert,
-  Shield,
   ArrowUpRight,
   AlertTriangle,
 } from 'lucide-react';
@@ -23,6 +23,22 @@ export default function AdminLayout({ children }: { children?: any }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const { user, isLoading, isAuthenticated, loginWithGoogle, logout } = useAuth();
+
+  const renderAdminSidebarLink = (props: {
+    href: string;
+    className: string;
+    children: React.ReactNode;
+    'aria-current'?: 'page';
+  }) => (
+    <Link
+      href={props.href}
+      className={props.className}
+      aria-current={props['aria-current']}
+      onClick={() => setMobileOpen(false)}
+    >
+      {props.children as any}
+    </Link>
+  );
 
   const navItems = [
     {
@@ -86,8 +102,8 @@ export default function AdminLayout({ children }: { children?: any }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-900 text-white">
         <div className="max-w-md w-full bg-slate-950 rounded-2xl border border-slate-800 p-8 shadow-xl text-center space-y-6">
-          <div className="w-14 h-14 rounded-2xl bg-red-600/20 text-red-500 flex items-center justify-center mx-auto border border-red-500/30">
-            <Shield className="w-7 h-7" />
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-white border border-slate-800 p-2.5 flex items-center justify-center shadow-xs">
+            <img src="/logo.png" alt="WaliKelas" className="w-11 h-11 object-contain" />
           </div>
 
           <div className="space-y-2">
@@ -116,7 +132,7 @@ export default function AdminLayout({ children }: { children?: any }) {
   if (user?.role !== 'ADMIN') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-100">
-        <div className="max-w-md w-full bg-white rounded-2xl border border-red-200 p-8 shadow-sm text-center space-y-5">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-red-200 p-8 shadow-sm text-center flex flex-col items-center gap-5">
           <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
             <AlertTriangle className="w-6 h-6" />
           </div>
@@ -127,7 +143,7 @@ export default function AdminLayout({ children }: { children?: any }) {
               diizinkan mengakses Admin Console.
             </p>
           </div>
-          <a href="/teacher">
+          <a href="/teacher" className="w-full">
             <Button variant="primary" size="md" className="w-full">
               Kembali ke Ruang Guru
             </Button>
@@ -142,18 +158,21 @@ export default function AdminLayout({ children }: { children?: any }) {
       {/* Admin Desktop Sidebar */}
       <div className="hidden md:block">
         <Sidebar
+          variant="dark"
           className="bg-slate-950 border-slate-900"
           brand={{
             name: 'WaliKelas Admin',
             subtitle: 'Teaching Tools Platform',
             href: '/admin',
+            badge: 'Admin',
             logo: (
-              <div className="w-8 h-8 rounded-lg bg-red-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
-                <Shield className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center shadow-sm">
+                <img src="/logo.png" alt="WaliKelas" className="w-6 h-6 object-contain" />
               </div>
             ),
           }}
           items={navItems}
+          renderLink={renderAdminSidebarLink}
           footer={
             <div className="space-y-2">
               <a
@@ -180,20 +199,24 @@ export default function AdminLayout({ children }: { children?: any }) {
         onOpenChange={setMobileOpen}
         title="Menu Admin Console"
         description="Navigasi admin console WaliKelas"
+        variant="dark"
       >
         <Sidebar
+          variant="dark"
           className="w-full h-full border-none static bg-slate-950"
           brand={{
             name: 'WaliKelas Admin',
             subtitle: 'Teaching Tools Platform',
             href: '/admin',
+            badge: 'Admin',
             logo: (
-              <div className="w-8 h-8 rounded-lg bg-red-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
-                <Shield className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center shadow-sm">
+                <img src="/logo.png" alt="WaliKelas" className="w-6 h-6 object-contain" />
               </div>
             ),
           }}
           items={navItems}
+          renderLink={renderAdminSidebarLink}
           footer={
             <div className="space-y-2">
               <a

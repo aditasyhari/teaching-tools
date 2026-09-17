@@ -21,7 +21,9 @@ import { RaiseHandRuntimeService } from './raise-hand-runtime.service';
 import { BrainstormRuntimeService } from './brainstorm-runtime.service';
 import { ExitTicketRuntimeService } from './exit-ticket-runtime.service';
 import { ClassroomTimerRuntimeService } from './classroom-timer-runtime.service';
+import { JoinCodeRateLimitGuard } from './guards/join-code-rate-limit.guard';
 import {
+  joinCodeSchema,
   joinSessionSchema,
   sessionActionSchema,
   sessionHeartbeatSchema,
@@ -199,30 +201,122 @@ export class SessionsGateway
   }
 
   /**
+   * Helper: Extract client IP from socket handshake.
+   */
+  private getClientIp(client: Socket): string {
+    const forwarded = client.handshake.headers['x-forwarded-for'];
+    if (typeof forwarded === 'string') {
+      return forwarded.split(',')[0].trim();
+    }
+    if (Array.isArray(forwarded) && forwarded.length > 0) {
+      return forwarded[0].split(',')[0].trim();
+    }
+    return client.handshake.address || 'unknown-ip';
+  }
+
+  /**
    * Helper: Authenticate teacher from socket handshake.
-   * Returns teacher user or null. Server-authoritative; never trusts client.
+   * Checks in-memory socket cache first (0ms latency), falling back to DB on initial connection.
    */
   private async authenticateTeacher(client: Socket): Promise<{ id: string; email: string } | null> {
+    if (!client.data) {
+      client.data = {};
+    }
+
+    if (client.data.teacherId && client.data.teacherEmail) {
+      return {
+        id: client.data.teacherId,
+        email: client.data.teacherEmail,
+      };
+    }
+
     const token = this.extractSessionToken(client);
     if (!token) return null;
 
-    const authSession = await this.prisma.authSession.findUnique({
-      where: { sessionToken: token },
-      include: { user: true },
-    });
+    try {
+      const authSession = await this.prisma.authSession.findUnique({
+        where: { sessionToken: token },
+        include: { user: true },
+      });
 
-    if (!authSession || authSession.expiresAt < new Date()) {
-      return null;
+      if (!authSession || authSession.expiresAt < new Date()) {
+        return null;
+      }
+
+      if (authSession.user.status === 'SUSPENDED') {
+        return null;
+      }
+
+      client.data.teacherId = authSession.user.id;
+      client.data.teacherEmail = authSession.user.email;
+
+      return {
+        id: authSession.user.id,
+        email: authSession.user.email,
+      };
+    } catch (err: any) {
+      this.logger.warn(`Database connection slow or cold-starting during socket auth: ${err.message}. Retrying once...`);
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        const retrySession = await this.prisma.authSession.findUnique({
+          where: { sessionToken: token },
+          include: { user: true },
+        });
+
+        if (!retrySession || retrySession.expiresAt < new Date() || retrySession.user.status === 'SUSPENDED') {
+          return null;
+        }
+
+        client.data.teacherId = retrySession.user.id;
+        client.data.teacherEmail = retrySession.user.email;
+
+        return {
+          id: retrySession.user.id,
+          email: retrySession.user.email,
+        };
+      } catch (retryErr: any) {
+        this.logger.error(`Retry authenticating teacher failed: ${retryErr.message}`);
+        return null;
+      }
+    }
+  }
+
+  /**
+   * Helper: Verify teacher session ownership.
+   * Leverages in-memory socket verification cache to eliminate repetitive PostgreSQL queries on every realtime event.
+   */
+  private async verifyTeacherSession(
+    client: Socket,
+    sessionId: string,
+    teacherId: string,
+  ): Promise<boolean> {
+    if (!client.data) {
+      client.data = {};
     }
 
-    if (authSession.user.status === 'SUSPENDED') {
-      return null;
+    if (
+      client.data.verifiedSessionId === sessionId &&
+      client.data.teacherId === teacherId
+    ) {
+      return true;
     }
 
-    return {
-      id: authSession.user.id,
-      email: authSession.user.email,
-    };
+    const teacherSockets =
+      typeof this.memory.getTeacherSockets === 'function'
+        ? this.memory.getTeacherSockets(sessionId)
+        : [];
+    if (teacherSockets.includes(client.id) && client.data.teacherId === teacherId) {
+      client.data.verifiedSessionId = sessionId;
+      return true;
+    }
+
+    try {
+      await this.sessionsService.findOne(sessionId, teacherId);
+      client.data.verifiedSessionId = sessionId;
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   handleConnection(client: Socket): void {
@@ -256,19 +350,36 @@ export class SessionsGateway
   @SubscribeMessage('session:join')
   async handleJoin(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: SessionJoinPayload & { isTeacher?: boolean; sessionId?: string },
+    @MessageBody()
+    payload: SessionJoinPayload & {
+      isTeacher?: boolean;
+      isProjector?: boolean;
+      sessionId?: string;
+    },
   ): Promise<void> {
     try {
       const teacher = await this.authenticateTeacher(client);
 
-      if (payload.isTeacher && teacher) {
+      if (payload.isTeacher) {
+        if (!teacher) {
+          client.emit('session:error', {
+            code: 'UNAUTHORIZED',
+            message: 'Gagal memverifikasi akun guru. Silakan muat ulang halaman.',
+          });
+          return;
+        }
+
         let sessionId = payload.sessionId;
 
         if (!sessionId && payload.joinCode) {
-          const session = await this.prisma.session.findFirst({
-            where: { joinCode: payload.joinCode.trim().toUpperCase() },
-          });
-          sessionId = session?.id;
+          try {
+            const session = await this.prisma.session.findFirst({
+              where: { joinCode: payload.joinCode.trim().toUpperCase() },
+            });
+            sessionId = session?.id;
+          } catch (dbErr: any) {
+            this.logger.warn(`Failed to find session by joinCode: ${dbErr.message}`);
+          }
         }
 
         if (!sessionId) {
@@ -282,6 +393,12 @@ export class SessionsGateway
         const session = await this.sessionsService.findOne(sessionId, teacher.id);
 
         this.memory.registerTeacher(session.id, client.id);
+        if (!client.data) {
+          client.data = {};
+        }
+        client.data.teacherId = teacher.id;
+        client.data.teacherEmail = teacher.email;
+        client.data.verifiedSessionId = session.id;
         client.join(`session:${session.id}`);
         client.join(`session:${session.id}:teachers`);
 
@@ -331,7 +448,89 @@ export class SessionsGateway
         return;
       }
 
+      // Projector Screen Join (Passive display mirror - does NOT register as student participant)
+      if (payload.isProjector) {
+        if (!payload.joinCode) {
+          client.emit('session:error', {
+            code: 'VALIDATION_ERROR',
+            message: 'Kode sesi wajib diisi untuk proyektor',
+          });
+          return;
+        }
+
+        const codeValidation = joinCodeSchema.safeParse(payload.joinCode);
+        if (!codeValidation.success) {
+          client.emit('session:error', {
+            code: 'VALIDATION_ERROR',
+            message: 'Kode sesi tidak valid',
+          });
+          return;
+        }
+
+        const sessionPreview = await this.sessionsService.verifyJoinCode(codeValidation.data);
+
+        this.memory.registerProjector(sessionPreview.id, client.id);
+        client.join(`session:${sessionPreview.id}`);
+        client.join(`session:${sessionPreview.id}:projectors`);
+
+        const snapshot = await this.sessionsService.getProjectorSnapshot(sessionPreview.id);
+        client.emit('session:state', snapshot);
+
+        // If quiz is currently active, send teacher snapshot so projector can see question & progress
+        if (this.quizRuntime.isQuizActive(sessionPreview.id)) {
+          const participants = this.memory.getParticipants(sessionPreview.id);
+          const quizSnapshot = this.quizRuntime.getTeacherSnapshot(sessionPreview.id, participants);
+          client.emit('quiz:state', quizSnapshot);
+        }
+
+        // If poll is active or exists, send poll snapshot
+        if (this.pollRuntime.hasPoll(sessionPreview.id)) {
+          const participants = this.memory.getParticipants(sessionPreview.id);
+          const pollSnapshot = this.pollRuntime.getTeacherSnapshot(sessionPreview.id, participants);
+          if (pollSnapshot) {
+            client.emit('poll:state', pollSnapshot);
+          }
+        }
+
+        // Send question box snapshot
+        const questionSnapshot = this.questionBoxRuntime.getTeacherSnapshot(sessionPreview.id);
+        client.emit('question:state', questionSnapshot);
+
+        // Send classroom timer snapshot
+        const timerSnapshot = this.classroomTimerRuntime.getParticipantSnapshot(sessionPreview.id);
+        client.emit('timer:state', timerSnapshot);
+
+        // Send brainstorm board snapshot
+        const brainstormSnapshot = this.brainstormRuntime.getTeacherSnapshot(sessionPreview.id);
+        client.emit('brainstorm:state', brainstormSnapshot);
+
+        // Send exit ticket snapshot
+        const participants = this.memory.getParticipants(sessionPreview.id);
+        const exitTicketSnapshot = this.exitTicketRuntime.getTeacherSnapshot(
+          sessionPreview.id,
+          participants.length,
+        );
+        client.emit('exit-ticket:state', exitTicketSnapshot);
+
+        // Send raise hand snapshot
+        const handSnapshot = this.raiseHandRuntime.getTeacherSnapshot(sessionPreview.id);
+        client.emit('hand:state', handSnapshot);
+
+        this.logger.log(`Projector joined session room ${sessionPreview.id}`);
+        return;
+      }
+
       // Participant Join
+      const clientIp = this.getClientIp(client);
+      const rateLimit = JoinCodeRateLimitGuard.check(clientIp);
+      if (!rateLimit.allowed) {
+        client.emit('session:error', {
+          code: 'TOO_MANY_REQUESTS',
+          message: `Terlalu banyak percobaan bergabung. Silakan coba lagi dalam ${rateLimit.retryAfterSeconds} detik.`,
+        });
+        return;
+      }
+
       const validation = joinSessionSchema.safeParse({
         code: payload.joinCode,
         displayName: payload.displayName,
@@ -518,6 +717,8 @@ export class SessionsGateway
 
       const updated = await this.sessionsService.endSession(validation.data.sessionId, teacher.id);
 
+      // Clear in-memory session participants and socket mappings
+      this.memory.clearSession(validation.data.sessionId);
       // Clear any active quiz runtime
       this.quizRuntime.clearQuiz(validation.data.sessionId);
       // Clear any active poll runtime
@@ -1179,7 +1380,14 @@ export class SessionsGateway
       }
 
       const { sessionId, questionId } = validation.data;
-      await this.sessionsService.findOne(sessionId, teacher.id);
+      const isOwner = await this.verifyTeacherSession(client, sessionId, teacher.id);
+      if (!isOwner) {
+        client.emit('question:error', {
+          code: 'FORBIDDEN',
+          message: 'Anda bukan pemilik sesi kelas ini',
+        });
+        return;
+      }
 
       const question = this.questionBoxRuntime.highlightQuestion(sessionId, questionId);
       if (!question) {
@@ -1241,7 +1449,14 @@ export class SessionsGateway
       }
 
       const { sessionId, questionId } = validation.data;
-      await this.sessionsService.findOne(sessionId, teacher.id);
+      const isOwner = await this.verifyTeacherSession(client, sessionId, teacher.id);
+      if (!isOwner) {
+        client.emit('question:error', {
+          code: 'FORBIDDEN',
+          message: 'Anda bukan pemilik sesi kelas ini',
+        });
+        return;
+      }
 
       const question = this.questionBoxRuntime.unhighlightQuestion(sessionId, questionId);
       if (!question) return;
@@ -1254,6 +1469,11 @@ export class SessionsGateway
       // Update teacher snapshot
       const teacherSnapshot = this.questionBoxRuntime.getTeacherSnapshot(sessionId);
       this.server.to(`session:${sessionId}:teachers`).emit('question:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:teachers`).emit('question:count-update', {
+        pendingCount: teacherSnapshot.pendingCount,
+        answeredCount: teacherSnapshot.answeredCount,
+        totalCount: teacherSnapshot.totalCount,
+      });
     } catch (err: any) {
       client.emit('question:error', {
         code: 'UNHIGHLIGHT_FAILED',
@@ -1291,7 +1511,14 @@ export class SessionsGateway
       }
 
       const { sessionId, questionId } = validation.data;
-      await this.sessionsService.findOne(sessionId, teacher.id);
+      const isOwner = await this.verifyTeacherSession(client, sessionId, teacher.id);
+      if (!isOwner) {
+        client.emit('question:error', {
+          code: 'FORBIDDEN',
+          message: 'Anda bukan pemilik sesi kelas ini',
+        });
+        return;
+      }
 
       const question = this.questionBoxRuntime.answerQuestion(sessionId, questionId);
       if (!question) return;
@@ -1304,6 +1531,11 @@ export class SessionsGateway
       // Update teacher snapshot
       const teacherSnapshot = this.questionBoxRuntime.getTeacherSnapshot(sessionId);
       this.server.to(`session:${sessionId}:teachers`).emit('question:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:teachers`).emit('question:count-update', {
+        pendingCount: teacherSnapshot.pendingCount,
+        answeredCount: teacherSnapshot.answeredCount,
+        totalCount: teacherSnapshot.totalCount,
+      });
     } catch (err: any) {
       client.emit('question:error', {
         code: 'ANSWER_FAILED',
@@ -1341,7 +1573,14 @@ export class SessionsGateway
       }
 
       const { sessionId, questionId } = validation.data;
-      await this.sessionsService.findOne(sessionId, teacher.id);
+      const isOwner = await this.verifyTeacherSession(client, sessionId, teacher.id);
+      if (!isOwner) {
+        client.emit('question:error', {
+          code: 'FORBIDDEN',
+          message: 'Anda bukan pemilik sesi kelas ini',
+        });
+        return;
+      }
 
       const question = this.questionBoxRuntime.dismissQuestion(sessionId, questionId);
       if (!question) return;
@@ -1354,6 +1593,11 @@ export class SessionsGateway
       // Update teacher snapshot
       const teacherSnapshot = this.questionBoxRuntime.getTeacherSnapshot(sessionId);
       this.server.to(`session:${sessionId}:teachers`).emit('question:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:teachers`).emit('question:count-update', {
+        pendingCount: teacherSnapshot.pendingCount,
+        answeredCount: teacherSnapshot.answeredCount,
+        totalCount: teacherSnapshot.totalCount,
+      });
     } catch (err: any) {
       client.emit('question:error', {
         code: 'DISMISS_FAILED',
@@ -1770,9 +2014,10 @@ export class SessionsGateway
         return;
       }
 
-      // Send updated teacher snapshot to teacher room
+      // Send updated teacher snapshot to teacher room and projectors
       const teacherSnapshot = this.brainstormRuntime.getTeacherSnapshot(sessionId);
       this.server.to(`session:${sessionId}:teachers`).emit('brainstorm:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:projectors`).emit('brainstorm:state', teacherSnapshot);
     } catch (err: any) {
       client.emit('brainstorm:error', {
         code: 'CREATE_FAILED',
@@ -1827,9 +2072,10 @@ export class SessionsGateway
         openedAt: result.activity.openedAt || Date.now(),
       });
 
-      // Update teacher snapshot
+      // Update teacher snapshot and projector
       const teacherSnapshot = this.brainstormRuntime.getTeacherSnapshot(sessionId);
       this.server.to(`session:${sessionId}:teachers`).emit('brainstorm:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:projectors`).emit('brainstorm:state', teacherSnapshot);
     } catch (err: any) {
       client.emit('brainstorm:error', {
         code: 'OPEN_FAILED',
@@ -1884,9 +2130,10 @@ export class SessionsGateway
         pausedAt: result.activity.pausedAt || Date.now(),
       });
 
-      // Update teacher snapshot
+      // Update teacher snapshot and projector
       const teacherSnapshot = this.brainstormRuntime.getTeacherSnapshot(sessionId);
       this.server.to(`session:${sessionId}:teachers`).emit('brainstorm:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:projectors`).emit('brainstorm:state', teacherSnapshot);
     } catch (err: any) {
       client.emit('brainstorm:error', {
         code: 'PAUSE_FAILED',
@@ -1941,9 +2188,10 @@ export class SessionsGateway
         closedAt: result.activity.closedAt || Date.now(),
       });
 
-      // Update teacher snapshot
+      // Update teacher snapshot and projector
       const teacherSnapshot = this.brainstormRuntime.getTeacherSnapshot(sessionId);
       this.server.to(`session:${sessionId}:teachers`).emit('brainstorm:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:projectors`).emit('brainstorm:state', teacherSnapshot);
     } catch (err: any) {
       client.emit('brainstorm:error', {
         code: 'CLOSE_FAILED',
@@ -2027,7 +2275,7 @@ export class SessionsGateway
     );
     client.emit('brainstorm:state', participantSnapshot);
 
-    // 3. Send new idea and updated snapshot to teacher room
+    // 3. Send new idea and updated snapshot to teacher room and projectors
     const teacherSnapshot = this.brainstormRuntime.getTeacherSnapshot(sessionId);
     this.server.to(`session:${sessionId}:teachers`).emit('brainstorm:idea-created', {
       idea,
@@ -2035,6 +2283,12 @@ export class SessionsGateway
       totalCount: teacherSnapshot.totalCount,
     });
     this.server.to(`session:${sessionId}:teachers`).emit('brainstorm:state', teacherSnapshot);
+    this.server.to(`session:${sessionId}:projectors`).emit('brainstorm:state', teacherSnapshot);
+    this.server.to(`session:${sessionId}:projectors`).emit('brainstorm:idea-created', {
+      idea,
+      visibleCount: teacherSnapshot.visibleCount,
+      totalCount: teacherSnapshot.totalCount,
+    });
 
     // 4. If ideasVisibleToParticipants is enabled, broadcast shared idea to session
     if (activity && activity.settings.ideasVisibleToParticipants) {
@@ -2093,8 +2347,9 @@ export class SessionsGateway
         totalCount: teacherSnapshot.visibleCount,
       });
 
-      // Update teacher snapshot
+      // Update teacher snapshot and projector
       this.server.to(`session:${sessionId}:teachers`).emit('brainstorm:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:projectors`).emit('brainstorm:state', teacherSnapshot);
     } catch (err: any) {
       client.emit('brainstorm:error', {
         code: 'HIDE_FAILED',
@@ -2154,8 +2409,9 @@ export class SessionsGateway
         });
       }
 
-      // Update teacher snapshot
+      // Update teacher snapshot and projector
       this.server.to(`session:${sessionId}:teachers`).emit('brainstorm:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:projectors`).emit('brainstorm:state', teacherSnapshot);
     } catch (err: any) {
       client.emit('brainstorm:error', {
         code: 'RESTORE_FAILED',
@@ -2210,10 +2466,11 @@ export class SessionsGateway
         return;
       }
 
-      // Send teacher snapshot to teacher room
+      // Send teacher snapshot to teacher room and projectors
       const totalOnline = this.memory.getOnlineParticipantCount(sessionId);
       const teacherSnapshot = this.exitTicketRuntime.getTeacherSnapshot(sessionId, totalOnline);
       this.server.to(`session:${sessionId}:teachers`).emit('exit-ticket:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:projectors`).emit('exit-ticket:state', teacherSnapshot);
     } catch (err: any) {
       client.emit('exit-ticket:error', {
         code: 'CREATE_FAILED',
@@ -2268,10 +2525,11 @@ export class SessionsGateway
         openedAt: result.activity.openedAt || Date.now(),
       });
 
-      // Update teacher snapshot
+      // Update teacher snapshot and projectors
       const totalOnline = this.memory.getOnlineParticipantCount(sessionId);
       const teacherSnapshot = this.exitTicketRuntime.getTeacherSnapshot(sessionId, totalOnline);
       this.server.to(`session:${sessionId}:teachers`).emit('exit-ticket:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:projectors`).emit('exit-ticket:state', teacherSnapshot);
     } catch (err: any) {
       client.emit('exit-ticket:error', {
         code: 'OPEN_FAILED',
@@ -2326,10 +2584,11 @@ export class SessionsGateway
         closedAt: result.activity.closedAt || Date.now(),
       });
 
-      // Update teacher snapshot
+      // Update teacher snapshot and projectors
       const totalOnline = this.memory.getOnlineParticipantCount(sessionId);
       const teacherSnapshot = this.exitTicketRuntime.getTeacherSnapshot(sessionId, totalOnline);
       this.server.to(`session:${sessionId}:teachers`).emit('exit-ticket:state', teacherSnapshot);
+      this.server.to(`session:${sessionId}:projectors`).emit('exit-ticket:state', teacherSnapshot);
     } catch (err: any) {
       client.emit('exit-ticket:error', {
         code: 'CLOSE_FAILED',
@@ -2405,7 +2664,7 @@ export class SessionsGateway
     );
     client.emit('exit-ticket:state', participantSnapshot);
 
-    // 3. Update teacher room with aggregates and snapshot
+    // 3. Update teacher room and projectors with aggregates and snapshot
     const totalOnline = this.memory.getOnlineParticipantCount(sessionId);
     const aggregates = this.exitTicketRuntime.calculateAggregates(sessionId, totalOnline);
     const teacherSnapshot = this.exitTicketRuntime.getTeacherSnapshot(sessionId, totalOnline);
@@ -2416,6 +2675,12 @@ export class SessionsGateway
       aggregates,
     });
     this.server.to(`session:${sessionId}:teachers`).emit('exit-ticket:state', teacherSnapshot);
+    this.server.to(`session:${sessionId}:projectors`).emit('exit-ticket:results-updated', {
+      responseCount: aggregates.responseCount,
+      completionRate: aggregates.completionRate,
+      aggregates,
+    });
+    this.server.to(`session:${sessionId}:projectors`).emit('exit-ticket:state', teacherSnapshot);
   }
 
   // ==========================================
@@ -2474,9 +2739,8 @@ export class SessionsGateway
       return;
     }
 
-    try {
-      await this.sessionsService.findOne(sessionId, teacher.id);
-    } catch {
+    const isOwner = await this.verifyTeacherSession(client, sessionId, teacher.id);
+    if (!isOwner) {
       client.emit('timer:error', {
         code: 'FORBIDDEN',
         message: 'Anda bukan pemilik sesi kelas ini',
@@ -2512,9 +2776,8 @@ export class SessionsGateway
       return;
     }
 
-    try {
-      await this.sessionsService.findOne(sessionId, teacher.id);
-    } catch {
+    const isOwner = await this.verifyTeacherSession(client, sessionId, teacher.id);
+    if (!isOwner) {
       client.emit('timer:error', {
         code: 'FORBIDDEN',
         message: 'Anda bukan pemilik sesi kelas ini',
@@ -2550,9 +2813,8 @@ export class SessionsGateway
       return;
     }
 
-    try {
-      await this.sessionsService.findOne(sessionId, teacher.id);
-    } catch {
+    const isOwner = await this.verifyTeacherSession(client, sessionId, teacher.id);
+    if (!isOwner) {
       client.emit('timer:error', {
         code: 'FORBIDDEN',
         message: 'Anda bukan pemilik sesi kelas ini',
@@ -2588,9 +2850,8 @@ export class SessionsGateway
       return;
     }
 
-    try {
-      await this.sessionsService.findOne(sessionId, teacher.id);
-    } catch {
+    const isOwner = await this.verifyTeacherSession(client, sessionId, teacher.id);
+    if (!isOwner) {
       client.emit('timer:error', {
         code: 'FORBIDDEN',
         message: 'Anda bukan pemilik sesi kelas ini',
@@ -2626,9 +2887,8 @@ export class SessionsGateway
       return;
     }
 
-    try {
-      await this.sessionsService.findOne(sessionId, teacher.id);
-    } catch {
+    const isOwner = await this.verifyTeacherSession(client, sessionId, teacher.id);
+    if (!isOwner) {
       client.emit('timer:error', {
         code: 'FORBIDDEN',
         message: 'Anda bukan pemilik sesi kelas ini',

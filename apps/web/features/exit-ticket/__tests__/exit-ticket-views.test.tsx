@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ParticipantExitTicketView } from '../participant-exit-ticket-view';
 import { TeacherExitTicketPanel } from '../teacher-exit-ticket-panel';
+import { ProjectorExitTicketView } from '../projector-exit-ticket-view';
 
 describe('Exit Ticket Views', () => {
   it('renders participant empty state when no exit ticket is active', () => {
@@ -133,6 +134,31 @@ describe('Exit Ticket Views', () => {
     expect(screen.getByText(/Respon Masuk: 8 \/ 10 peserta/i)).toBeDefined();
     expect(screen.getByText(/80% selesai/i)).toBeDefined();
     expect(screen.getByText('4.5')).toBeDefined();
+  });
+
+  it('renders ProjectorExitTicketView with progress meter correctly', () => {
+    render(
+      <ProjectorExitTicketView
+        activity={{
+          id: 'et-1',
+          sessionId: 's-1',
+          title: 'Refleksi Akhir Kelas Matematika',
+          status: 'OPEN',
+          isAnonymous: false,
+          questions: [],
+          createdAt: Date.now(),
+        }}
+        responseCount={20}
+        totalExpected={25}
+        completionRate={80}
+      />
+    );
+
+    expect(screen.getByText('Refleksi Akhir Kelas Matematika')).toBeDefined();
+    expect(screen.getByText(/Tiket Keluar Kelas/i)).toBeDefined();
+    expect(screen.getByText(/Pengisian Sedang Berlangsung/i)).toBeDefined();
+    expect(screen.getByText('20')).toBeDefined();
+    expect(screen.getByText('(80%)')).toBeDefined();
   });
 });
 

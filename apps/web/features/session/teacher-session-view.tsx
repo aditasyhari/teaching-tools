@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users,
@@ -28,7 +28,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@walikelas/ui';
-import type { SessionSnapshot } from '@walikelas/types';
+import type { SessionSnapshot, RaisedHandItem, QuestionBoxItem } from '@walikelas/types';
+import { TeacherSessionAlerts, type ClassroomAlertItem } from './teacher-session-alerts';
 import { useSessionSocket } from './use-session-socket';
 import { apiClient } from '../../lib/api';
 import { fetchSession } from '@walikelas/api-client';
@@ -150,6 +151,55 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
     isTeacher: true,
   });
 
+  // Realtime Classroom Notification Alerts
+  const [activeAlerts, setActiveAlerts] = useState<ClassroomAlertItem[]>([]);
+
+  const handleDismissAlert = useCallback((id: string) => {
+    setActiveAlerts((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  const addClassroomAlert = useCallback((alert: Omit<ClassroomAlertItem, 'id' | 'timestamp'>) => {
+    const id = `alert_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const newAlert: ClassroomAlertItem = {
+      ...alert,
+      id,
+      timestamp: Date.now(),
+    };
+    setActiveAlerts((prev) => [newAlert, ...prev.slice(0, 2)]);
+
+    setTimeout(() => {
+      setActiveAlerts((prev) => prev.filter((a) => a.id !== id));
+    }, 6500);
+  }, []);
+
+  const handleHandRaisedAlert = useCallback(
+    (hand: RaisedHandItem, queueCount: number) => {
+      addClassroomAlert({
+        type: 'RAISE_HAND',
+        title: 'Siswa Mengangkat Tangan',
+        author: hand.displayName,
+        message: `${hand.displayName} mengangkat tangan (antrean #${queueCount})`,
+        actionLabel: 'Lihat Antrean',
+        onAction: () => setShowRaiseHand(true),
+      });
+    },
+    [addClassroomAlert],
+  );
+
+  const handleQuestionCreatedAlert = useCallback(
+    (question: QuestionBoxItem) => {
+      addClassroomAlert({
+        type: 'NEW_QUESTION',
+        title: 'Pertanyaan Baru Masuk',
+        author: question.isAnonymous ? 'Anonim' : question.authorName,
+        message: question.content,
+        actionLabel: 'Buka Kotak Pertanyaan',
+        onAction: () => setShowQuestionBox(true),
+      });
+    },
+    [addClassroomAlert],
+  );
+
   // Question Box / Ask Teacher Hook
   const {
     questions: qbQuestions,
@@ -165,6 +215,7 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
     socket,
     sessionId,
     isTeacher: true,
+    onQuestionCreated: handleQuestionCreatedAlert,
   });
 
   // Raise Hand / Request to Speak Hook
@@ -180,6 +231,7 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
     socket,
     sessionId,
     isTeacher: true,
+    onHandRaised: handleHandRaisedAlert,
   });
 
   // Collaborative Brainstorm Board Hook
@@ -338,6 +390,31 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
               </span>
             </div>
 
+            {/* Quick Alert Notice Chips */}
+            {rhRaisedCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowRaiseHand(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-500 hover:bg-amber-600 text-stone-950 shadow-xs animate-bounce cursor-pointer transition-transform active:scale-95"
+                title={`${rhRaisedCount} siswa mengangkat tangan. Klik untuk membuka.`}
+              >
+                <Hand className="w-3.5 h-3.5" />
+                <span>{rhRaisedCount} Angkat Tangan</span>
+              </button>
+            )}
+
+            {qbPendingCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowQuestionBox(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer transition-transform active:scale-95"
+                title={`${qbPendingCount} pertanyaan baru belum dijawab. Klik untuk membuka.`}
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span>{qbPendingCount} Tanya</span>
+              </button>
+            )}
+
             {/* Session Status Badge */}
             {isWaiting && <Badge variant="warning">Menunggu Dimulai</Badge>}
             {isActive && <Badge variant="success">Sesi Sedang Berlangsung</Badge>}
@@ -345,6 +422,9 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
           </div>
         }
       />
+
+      {/* Floating Realtime Classroom Activity Alerts */}
+      <TeacherSessionAlerts alerts={activeAlerts} onDismiss={handleDismissAlert} />
 
       {socketError && (
         <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 dark:bg-rose-950/30 dark:border-rose-900/50 dark:text-rose-400 flex items-center gap-3">
@@ -447,14 +527,16 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
                       <Button
                         variant="outline"
                         size="sm"
-                        leftIcon={<BarChart2 className="w-4 h-4 text-blue-600" />}
                         onClick={() => {
                           setPollHudDismissed(false);
                           setShowPollPicker(true);
                         }}
                         className="justify-start font-medium"
                       >
-                        Polling
+                        <span className="flex items-center gap-2 truncate">
+                          <BarChart2 className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span className="truncate">Polling</span>
+                        </span>
                       </Button>
                     )}
 
@@ -462,27 +544,31 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
                       <Button
                         variant="outline"
                         size="sm"
-                        leftIcon={<HelpCircle className="w-4 h-4 text-indigo-600" />}
                         onClick={() => {
                           setHudDismissed(false);
                           setShowQuizPicker(true);
                         }}
                         className="justify-start font-medium"
                       >
-                        Kuis
+                        <span className="flex items-center gap-2 truncate">
+                          <HelpCircle className="w-4 h-4 text-indigo-600 shrink-0" />
+                          <span className="truncate">Kuis</span>
+                        </span>
                       </Button>
                     )}
 
                     <Button
                       variant="outline"
                       size="sm"
-                      leftIcon={<HelpCircle className="w-4 h-4 text-amber-600" />}
                       onClick={() => setShowQuestionBox(true)}
                       className="justify-between font-medium"
                     >
-                      <span className="truncate">Tanya Guru</span>
+                      <span className="flex items-center gap-2 truncate">
+                        <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span className="truncate">Tanya Guru</span>
+                      </span>
                       {qbPendingCount > 0 && (
-                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-amber-500 rounded-full">
+                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-amber-500 rounded-full shrink-0">
                           {qbPendingCount}
                         </span>
                       )}
@@ -491,17 +577,19 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
                     <Button
                       variant="outline"
                       size="sm"
-                      leftIcon={<Hand className="w-4 h-4 text-amber-600" />}
                       onClick={() => setShowRaiseHand(true)}
                       className="justify-between font-medium"
                     >
-                      <span className="truncate">Angkat Tangan</span>
+                      <span className="flex items-center gap-2 truncate">
+                        <Hand className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span className="truncate">Angkat Tangan</span>
+                      </span>
                       {rhRaisedCount > 0 ? (
-                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-amber-500 rounded-full animate-pulse">
+                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-amber-500 rounded-full animate-pulse shrink-0">
                           {rhRaisedCount}
                         </span>
                       ) : rhCurrentSpeaker ? (
-                        <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500 p-0.5 text-white">
+                        <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500 p-0.5 text-white shrink-0">
                           <Mic className="h-3 w-3 animate-pulse" />
                         </span>
                       ) : null}
@@ -510,17 +598,19 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
                     <Button
                       variant="outline"
                       size="sm"
-                      leftIcon={<Lightbulb className="w-4 h-4 text-violet-600" />}
                       onClick={() => setShowBrainstorm(true)}
                       className="justify-between font-medium"
                     >
-                      <span className="truncate">Papan Ide</span>
+                      <span className="flex items-center gap-2 truncate">
+                        <Lightbulb className="w-4 h-4 text-violet-600 shrink-0" />
+                        <span className="truncate">Papan Ide</span>
+                      </span>
                       {bsActivity?.status === 'OPEN' ? (
-                        <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                        <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white shrink-0">
                           Aktif
                         </span>
                       ) : bsTotalCount > 0 ? (
-                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-stone-700 bg-stone-100 rounded-full">
+                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-stone-700 bg-stone-100 rounded-full shrink-0">
                           {bsVisibleCount}
                         </span>
                       ) : null}
@@ -529,17 +619,19 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
                     <Button
                       variant="outline"
                       size="sm"
-                      leftIcon={<ClipboardCheck className="w-4 h-4 text-teal-600" />}
                       onClick={() => setShowExitTicket(true)}
                       className="justify-between font-medium"
                     >
-                      <span className="truncate">Tiket Keluar</span>
+                      <span className="flex items-center gap-2 truncate">
+                        <ClipboardCheck className="w-4 h-4 text-teal-600 shrink-0" />
+                        <span className="truncate">Tiket Keluar</span>
+                      </span>
                       {etActivity?.status === 'OPEN' ? (
-                        <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                        <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white shrink-0">
                           Aktif
                         </span>
                       ) : etResponseCount > 0 ? (
-                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-stone-700 bg-stone-100 rounded-full">
+                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-stone-700 bg-stone-100 rounded-full shrink-0">
                           {etResponseCount}
                         </span>
                       ) : null}
@@ -548,13 +640,15 @@ export function TeacherSessionView({ sessionId }: TeacherSessionViewProps): Reac
                     <Button
                       variant="outline"
                       size="sm"
-                      leftIcon={<Clock className="w-4 h-4 text-blue-600" />}
                       onClick={() => setShowClassroomTimer(true)}
                       className="justify-between font-medium"
                     >
-                      <span className="truncate">Timer</span>
+                      <span className="flex items-center gap-2 truncate">
+                        <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span className="truncate">Timer</span>
+                      </span>
                       {(ctIsRunning || ctIsPaused || ctIsCompleted) && (
-                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-mono font-bold text-stone-700 bg-stone-100 rounded-full">
+                        <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-mono font-bold text-stone-700 bg-stone-100 rounded-full shrink-0">
                           {formatTimerTime(ctRemaining)}
                         </span>
                       )}

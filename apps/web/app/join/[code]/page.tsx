@@ -9,8 +9,8 @@ interface JoinWithCodePageProps {
 }
 
 export const metadata: Metadata = {
-  title: 'Gabung Sesi Kelas | WaliKelas Teaching Tools',
-  description: 'Gabung ke sesi kelas interaktif guru Anda secara langsung.',
+  title: 'Masuk Sesi Kelas',
+  description: 'Konfirmasi nama tampilan Anda untuk bergabung ke aktivitas kelas guru.',
 };
 
 export default async function JoinWithCodePage({

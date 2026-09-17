@@ -174,12 +174,16 @@ export function useExitTicket({ socket, sessionId, isTeacher = false }: UseExitT
   const openActivity = useCallback(() => {
     if (!socket || !sessionIdRef.current) return;
     setError(null);
+    // Optimistic 0ms update
+    setActivity((prev) => (prev ? { ...prev, status: 'OPEN' } : prev));
     socket.emit('exit-ticket:open', { sessionId: sessionIdRef.current });
   }, [socket]);
 
   const closeActivity = useCallback(() => {
     if (!socket || !sessionIdRef.current) return;
     setError(null);
+    // Optimistic 0ms update
+    setActivity((prev) => (prev ? { ...prev, status: 'CLOSED' } : prev));
     socket.emit('exit-ticket:close', { sessionId: sessionIdRef.current });
   }, [socket]);
 

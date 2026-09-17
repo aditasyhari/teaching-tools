@@ -197,7 +197,7 @@ export function ScoreboardView(): React.JSX.Element {
 
       {/* Empty State */}
       {teams.length === 0 ? (
-        <div className="bg-white rounded-3xl border-2 border-dashed border-[#e8e4dc] p-12 sm:p-16 text-center flex flex-col items-center justify-center min-h-[360px] text-stone-400 space-y-4 select-none shadow-xs">
+        <div className="bg-white rounded-3xl border-2 border-dashed border-[#e8e4dc] p-12 sm:p-16 text-center flex flex-col items-center justify-center min-h-[360px] text-stone-400 gap-4 select-none shadow-xs">
           <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-400">
             <Trophy className="w-8 h-8" aria-hidden="true" />
           </div>
@@ -210,7 +210,7 @@ export function ScoreboardView(): React.JSX.Element {
           <Button
             variant="primary"
             size="md"
-            className="bg-amber-500 hover:bg-amber-600 text-stone-900 font-bold border-amber-600 shadow-xs"
+            className="mt-2 bg-amber-500 hover:bg-amber-600 text-stone-900 font-bold border-amber-600 shadow-xs"
             leftIcon={<Plus className="w-4 h-4" aria-hidden="true" />}
             onClick={() => addTeam()}
           >

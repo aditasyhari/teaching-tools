@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ParticipantBrainstormView } from '../participant-brainstorm-view';
 import { TeacherBrainstormPanel } from '../teacher-brainstorm-panel';
+import { ProjectorBrainstormView } from '../projector-brainstorm-view';
 
 describe('Brainstorm Views', () => {
   it('renders participant empty state when no activity is active', () => {
@@ -118,6 +119,80 @@ describe('Brainstorm Views', () => {
     const hideBtn = screen.getByRole('button', { name: /^Sembunyikan$/i });
     fireEvent.click(hideBtn);
     expect(onHideIdea).toHaveBeenCalledWith('idea-1');
+  });
+
+  it('renders ProjectorBrainstormView empty state and sticky note grid correctly', () => {
+    const { rerender } = render(
+      <ProjectorBrainstormView
+        activity={{
+          id: 'b-1',
+          sessionId: 's-1',
+          prompt: 'Pertanyaan Brainstorming Proyektor',
+          status: 'OPEN',
+          settings: {
+            isAnonymous: false,
+            ideasVisibleToParticipants: true,
+            submissionMode: 'MULTIPLE_PER_PARTICIPANT',
+            maxIdeasPerParticipant: 5,
+          },
+          createdAt: Date.now(),
+        }}
+        ideas={[]}
+        totalIdeasCount={0}
+      />,
+    );
+
+    expect(screen.getByText('Pertanyaan Brainstorming Proyektor')).toBeDefined();
+    expect(screen.getByText(/Belum Ada Ide yang Dikirim/i)).toBeDefined();
+
+    rerender(
+      <ProjectorBrainstormView
+        activity={{
+          id: 'b-1',
+          sessionId: 's-1',
+          prompt: 'Pertanyaan Brainstorming Proyektor',
+          status: 'OPEN',
+          settings: {
+            isAnonymous: false,
+            ideasVisibleToParticipants: true,
+            submissionMode: 'MULTIPLE_PER_PARTICIPANT',
+            maxIdeasPerParticipant: 5,
+          },
+          createdAt: Date.now(),
+        }}
+        ideas={[
+          {
+            id: 'idea-1',
+            sessionId: 's-1',
+            activityId: 'b-1',
+            participantId: 'p-1',
+            authorName: 'Budi Santoso',
+            isAnonymous: false,
+            content: 'Ide ramah lingkungan dari Budi',
+            status: 'VISIBLE',
+            createdAt: Date.now(),
+          },
+          {
+            id: 'idea-2',
+            sessionId: 's-1',
+            activityId: 'b-1',
+            participantId: 'p-2',
+            authorName: 'Anonim',
+            isAnonymous: true,
+            content: 'Ide rahasia tanpa nama',
+            status: 'VISIBLE',
+            createdAt: Date.now(),
+          },
+        ]}
+        totalIdeasCount={2}
+      />,
+    );
+
+    expect(screen.getByText('“Ide ramah lingkungan dari Budi”')).toBeDefined();
+    expect(screen.getByText('Budi Santoso')).toBeDefined();
+    expect(screen.getByText('“Ide rahasia tanpa nama”')).toBeDefined();
+    expect(screen.getByText('Anonim')).toBeDefined();
+    expect(screen.getByText(/2 ide terkumpul/i)).toBeDefined();
   });
 });
 

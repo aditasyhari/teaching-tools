@@ -198,14 +198,29 @@ export function useClassroomTimer({
     };
   }, [socket, enableSound]);
 
-  // Teacher actions
+  // Teacher actions (with optimistic instant UI feedback)
   const setTimer = useCallback(
     (duration: number, label?: string, visibility?: ClassroomTimerVisibility) => {
       if (!socket || !sessionIdRef.current || !isTeacher) return;
       setError(null);
+
+      const clamped = Math.min(3600, Math.max(5, Math.floor(duration)));
+
+      // Optimistic update
+      setDisplayRemaining(clamped);
+      setTimerState((prev) => ({
+        sessionId: sessionIdRef.current || '',
+        status: 'IDLE',
+        duration: clamped,
+        remainingSeconds: clamped,
+        label: label !== undefined ? label.trim() || undefined : prev?.label,
+        visibility: visibility || prev?.visibility || 'SHARED_TIMER',
+        serverTime: Date.now() + serverOffsetRef.current,
+      }));
+
       socket.emit('timer:set', {
         sessionId: sessionIdRef.current,
-        duration,
+        duration: clamped,
         label,
         visibility,
       });
@@ -217,17 +232,60 @@ export function useClassroomTimer({
     (options?: { duration?: number; label?: string; visibility?: ClassroomTimerVisibility }) => {
       if (!socket || !sessionIdRef.current || !isTeacher) return;
       setError(null);
+
+      const targetDuration = options?.duration ?? timer?.duration ?? 300;
+      const clamped = Math.min(3600, Math.max(5, Math.floor(targetDuration)));
+      const remainingSecs =
+        options?.duration !== undefined
+          ? clamped
+          : timer?.remainingSeconds && timer.remainingSeconds > 0
+            ? timer.remainingSeconds
+            : clamped;
+
+      const now = Date.now();
+      const endsAt = now + remainingSecs * 1000 - serverOffsetRef.current;
+
+      // Optimistic update
+      setDisplayRemaining(remainingSecs);
+      setTimerState((prev) => ({
+        sessionId: sessionIdRef.current || '',
+        status: 'RUNNING',
+        duration: options?.duration !== undefined ? clamped : (prev?.duration ?? clamped),
+        remainingSeconds: remainingSecs,
+        label: options?.label !== undefined ? options.label.trim() || undefined : prev?.label,
+        visibility: options?.visibility ?? prev?.visibility ?? 'SHARED_TIMER',
+        startedAt: now,
+        endsAt,
+        serverTime: now + serverOffsetRef.current,
+      }));
+
       socket.emit('timer:start', {
         sessionId: sessionIdRef.current,
         ...options,
       });
     },
-    [socket, isTeacher],
+    [socket, isTeacher, timer],
   );
 
   const pauseTimer = useCallback(() => {
     if (!socket || !sessionIdRef.current || !isTeacher) return;
     setError(null);
+
+    // Optimistic pause: stop countdown at current remaining seconds immediately
+    setDisplayRemaining((currentSecs) => {
+      setTimerState((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 'PAUSED',
+              remainingSeconds: currentSecs,
+              endsAt: undefined,
+            }
+          : null,
+      );
+      return currentSecs;
+    });
+
     socket.emit('timer:pause', {
       sessionId: sessionIdRef.current,
     });
@@ -236,6 +294,24 @@ export function useClassroomTimer({
   const resumeTimer = useCallback(() => {
     if (!socket || !sessionIdRef.current || !isTeacher) return;
     setError(null);
+
+    // Optimistic resume: restart countdown from current remaining seconds immediately
+    setDisplayRemaining((currentSecs) => {
+      const now = Date.now();
+      const endsAt = now + currentSecs * 1000 - serverOffsetRef.current;
+      setTimerState((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 'RUNNING',
+              remainingSeconds: currentSecs,
+              endsAt,
+            }
+          : null,
+      );
+      return currentSecs;
+    });
+
     socket.emit('timer:resume', {
       sessionId: sessionIdRef.current,
     });
@@ -245,12 +321,39 @@ export function useClassroomTimer({
     (newDuration?: number) => {
       if (!socket || !sessionIdRef.current || !isTeacher) return;
       setError(null);
+
+      const target = newDuration ?? timer?.duration ?? 300;
+      const clamped = Math.min(3600, Math.max(5, Math.floor(target)));
+
+      // Optimistic reset: immediately show full duration and return to IDLE
+      setDisplayRemaining(clamped);
+      setTimerState((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 'IDLE',
+              duration: clamped,
+              remainingSeconds: clamped,
+              endsAt: undefined,
+              startedAt: undefined,
+              serverTime: Date.now() + serverOffsetRef.current,
+            }
+          : {
+              sessionId: sessionIdRef.current || '',
+              status: 'IDLE',
+              duration: clamped,
+              remainingSeconds: clamped,
+              visibility: 'SHARED_TIMER',
+              serverTime: Date.now() + serverOffsetRef.current,
+            },
+      );
+
       socket.emit('timer:reset', {
         sessionId: sessionIdRef.current,
-        newDuration,
+        newDuration: newDuration !== undefined ? clamped : undefined,
       });
     },
-    [socket, isTeacher],
+    [socket, isTeacher, timer],
   );
 
   const clearError = useCallback(() => setError(null), []);

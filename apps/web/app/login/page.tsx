@@ -1,32 +1,16 @@
-'use client';
+import type { Metadata } from 'next';
+import React from 'react';
+import { LoginPageClient } from './login-client';
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
-import { TeacherLoginView } from '@/components/auth/teacher-login-view';
-import { Spinner } from '@walikelas/ui';
+export const metadata: Metadata = {
+  title: 'Masuk Ruang Guru',
+  description:
+    'Masuk ke Ruang Guru WaliKelas menggunakan Akun Google untuk mengelola kuis, polling, kelas, dan sesi interaktif Anda.',
+  alternates: {
+    canonical: '/login',
+  },
+};
 
 export default function LoginPage(): React.JSX.Element {
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace('/teacher');
-    }
-  }, [isAuthenticated, router]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#faf8f5]">
-        <div className="flex flex-col items-center gap-3">
-          <Spinner size="lg" />
-          <p className="text-sm text-stone-500 font-medium">Memeriksa status akun...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return <TeacherLoginView />;
+  return <LoginPageClient />;
 }
-

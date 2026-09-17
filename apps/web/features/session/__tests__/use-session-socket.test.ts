@@ -210,4 +210,26 @@ describe('useSessionSocket Hook', () => {
     });
     expect(mockSocket.emit).toHaveBeenCalledWith('session:end', { sessionId: 'sess-123' });
   });
+
+  it('initializes socket and joins as projector without participant displayName', () => {
+    const { result } = renderHook(() =>
+      useSessionSocket({
+        isProjector: true,
+        joinCode: 'PROJ99',
+      }),
+    );
+
+    expect(result.current.connectionStatus).toBe('CONNECTING');
+
+    act(() => {
+      mockSocket.connected = true;
+      eventHandlers['connect']?.();
+    });
+
+    expect(result.current.connectionStatus).toBe('CONNECTED');
+    expect(mockSocket.emit).toHaveBeenCalledWith('session:join', {
+      joinCode: 'PROJ99',
+      isProjector: true,
+    });
+  });
 });

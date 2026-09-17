@@ -19,6 +19,7 @@ interface UseRaiseHandOptions {
   sessionId?: string;
   isTeacher?: boolean;
   participantId?: string | null;
+  onHandRaised?: (hand: RaisedHandItem, queueCount: number) => void;
 }
 
 export function useRaiseHand({
@@ -26,6 +27,7 @@ export function useRaiseHand({
   sessionId,
   isTeacher = false,
   participantId,
+  onHandRaised: onHandRaisedCallback,
 }: UseRaiseHandOptions) {
   // Teacher state
   const [queue, setQueue] = useState<RaisedHandItem[]>([]);
@@ -57,6 +59,11 @@ export function useRaiseHand({
   useEffect(() => {
     participantIdRef.current = participantId;
   }, [participantId]);
+
+  const onHandRaisedRef = useRef(onHandRaisedCallback);
+  useEffect(() => {
+    onHandRaisedRef.current = onHandRaisedCallback;
+  }, [onHandRaisedCallback]);
 
   // Handle countdown timer
   useEffect(() => {
@@ -98,6 +105,7 @@ export function useRaiseHand({
           return next.sort((a, b) => a.raisedAt - b.raisedAt);
         });
         setRaisedCount(payload.queueCount);
+        onHandRaisedRef.current?.(payload.hand, payload.queueCount);
       }
     };
 
@@ -241,10 +249,13 @@ export function useRaiseHand({
     });
   }, [socket, cooldown]);
 
-  // Actions for Teacher: Acknowledge hand in queue
+  // Actions for Teacher: Acknowledge hand in queue (Optimistic 0ms)
   const acknowledgeHand = useCallback(
     (handId: string) => {
       if (!socket || !sessionIdRef.current) return;
+      setQueue((prev) =>
+        prev.map((h) => (h.id === handId ? { ...h, status: 'ACKNOWLEDGED' } : h)),
+      );
       socket.emit('hand:acknowledge', {
         sessionId: sessionIdRef.current,
         handId,
@@ -253,11 +264,24 @@ export function useRaiseHand({
     [socket],
   );
 
-  // Actions for Teacher: Grant speaking turn
+  // Actions for Teacher: Grant speaking turn (Optimistic 0ms)
   const startSpeaking = useCallback(
     (handId: string) => {
       if (!socket || !sessionIdRef.current) return;
       setError(null);
+      setQueue((prev) => {
+        const target = prev.find((h) => h.id === handId);
+        if (target) {
+          setCurrentSpeaker({
+            ...target,
+            status: 'SPEAKING',
+            speakingAt: Date.now(),
+          });
+        }
+        return prev.filter((h) => h.id !== handId);
+      });
+      setRaisedCount((prev) => Math.max(0, prev - 1));
+
       socket.emit('hand:start-speaking', {
         sessionId: sessionIdRef.current,
         handId,
@@ -266,10 +290,14 @@ export function useRaiseHand({
     [socket],
   );
 
-  // Actions for Teacher: Lower specific participant hand / end speaking turn
+  // Actions for Teacher: Lower specific participant hand / end speaking turn (Optimistic 0ms)
   const lowerParticipantHand = useCallback(
     (handId: string) => {
       if (!socket || !sessionIdRef.current) return;
+      setQueue((prev) => prev.filter((h) => h.id !== handId));
+      setCurrentSpeaker((curr) => (curr?.id === handId ? null : curr));
+      setRaisedCount((prev) => Math.max(0, prev - 1));
+
       socket.emit('hand:lower-participant', {
         sessionId: sessionIdRef.current,
         handId,
@@ -278,9 +306,13 @@ export function useRaiseHand({
     [socket],
   );
 
-  // Actions for Teacher: Lower all hands
+  // Actions for Teacher: Lower all hands (Optimistic 0ms)
   const lowerAllHands = useCallback(() => {
     if (!socket || !sessionIdRef.current) return;
+    setQueue([]);
+    setCurrentSpeaker(null);
+    setRaisedCount(0);
+
     socket.emit('hand:lower-all', {
       sessionId: sessionIdRef.current,
     });

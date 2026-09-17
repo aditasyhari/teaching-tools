@@ -60,12 +60,22 @@ export interface ParticipantSessionSnapshot {
   serverTime: string;
 }
 
+export interface ProjectorSessionSnapshot {
+  id: string;
+  title: string;
+  joinCode: string;
+  status: SessionStatus;
+  participantCount: number;
+  serverTime: string;
+}
+
 // Client to Server Events
 export interface SessionJoinPayload {
   joinCode: string;
   displayName?: string;
   participantId?: string;
   reconnectToken?: string;
+  isProjector?: boolean;
 }
 
 export interface SessionLeavePayload {

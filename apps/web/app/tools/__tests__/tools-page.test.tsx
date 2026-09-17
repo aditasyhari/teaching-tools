@@ -1,9 +1,22 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ToolsPage from '../page.js';
 
+const mockPush = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: vi.fn(),
+  }),
+  usePathname: () => '/tools',
+}));
+
 describe('ToolsPage (/tools) — Teacher Toolbox Catalogue', () => {
+  beforeEach(() => {
+    mockPush.mockClear();
+  });
   it('renders teacher-first heading and supporting copy', () => {
     render(<ToolsPage />);
     expect(
@@ -52,6 +65,15 @@ describe('ToolsPage (/tools) — Teacher Toolbox Catalogue', () => {
     fireEvent.click(resetBtn);
 
     expect(screen.queryByText('Perkakas tidak ditemukan')).toBeNull();
+  });
+
+  it('navigates via router.push on tool selection without hard reload', () => {
+    render(<ToolsPage />);
+    const timerOpenButtons = screen.getAllByRole('button', { name: /Mulai|Buka/i });
+    expect(timerOpenButtons.length).toBeGreaterThan(0);
+
+    fireEvent.click(timerOpenButtons[0]!);
+    expect(mockPush).toHaveBeenCalledWith(expect.stringMatching(/^\/tools\//));
   });
 });
 

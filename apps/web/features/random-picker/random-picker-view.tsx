@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Shuffle,
   Sparkles,
@@ -11,11 +11,13 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
+  GraduationCap,
 } from 'lucide-react';
 import { Button, Badge, Card, Textarea } from '@walikelas/ui';
 import { motion } from 'motion/react';
 import { winnerRevealMotion } from '../../lib/motion';
 import { useRandomPicker } from './use-random-picker';
+import { useOptionalAuth } from '../../lib/auth-context';
 
 const SAMPLE_NAMES = [
   'Ahmad Dahlan',
@@ -55,6 +57,16 @@ export function RandomPickerView(): React.JSX.Element {
   const [announcement, setAnnouncement] = useState('');
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
+
+  const auth = useOptionalAuth();
+  const activeClassroom = auth?.activeClassroom;
+  const activeStudents = useMemo(() => {
+    if (!activeClassroom?.members) return [];
+    return activeClassroom.members
+      .filter((m) => m.status === 'ACTIVE')
+      .map((m) => m.displayName.trim())
+      .filter(Boolean);
+  }, [activeClassroom]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -112,7 +124,8 @@ export function RandomPickerView(): React.JSX.Element {
       }
     };
 
-    spinIntervalRef.current = setTimeout(runShuffleStep, delay) as unknown as NodeJS.Timeout;
+    // Run first step immediately at 0ms for instant button response
+    runShuffleStep();
   }, [itemCount, isSpinning, isPicking, items, pick]);
 
   const handleLoadSample = useCallback(() => {
@@ -360,6 +373,29 @@ export function RandomPickerView(): React.JSX.Element {
 
         {showRoster && (
           <div id="roster-editor-panel" className="p-4 sm:p-5 pt-0 space-y-4 border-t border-stone-100">
+            {activeClassroom && activeStudents.length > 0 && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-amber-50/80 border border-amber-200/70 text-xs">
+                <div className="flex items-center gap-2 text-stone-800">
+                  <GraduationCap className="w-4 h-4 text-amber-600 shrink-0" aria-hidden="true" />
+                  <span>
+                    Konteks Kelas Aktif: <strong>{activeClassroom.name}</strong> ({activeStudents.length} siswa)
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="bg-white hover:bg-amber-100 text-stone-900 border-amber-300 font-bold text-xs h-7 self-start sm:self-auto shadow-xs"
+                  onClick={() => {
+                    setRawInput(activeStudents.join('\n'));
+                    setAnnouncement(`Daftar siswa dari kelas ${activeClassroom.name} berhasil dimuat.`);
+                  }}
+                >
+                  Muat Siswa Kelas Ini
+                </Button>
+              </div>
+            )}
+
             <Textarea
               id="names-input"
               rows={8}

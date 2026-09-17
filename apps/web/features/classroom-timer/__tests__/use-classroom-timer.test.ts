@@ -94,9 +94,13 @@ describe('useClassroomTimer Hook', () => {
         label: 'Presentasi',
         visibility: 'SHARED_TIMER',
       });
+      // Optimistic assertions
+      expect(result.current.duration).toBe(180);
+      expect(result.current.remaining).toBe(180);
+      expect(result.current.isIdle).toBe(true);
     });
 
-    it('emits timer:start when calling startTimer', () => {
+    it('emits timer:start and optimistically starts countdown immediately', () => {
       const { result } = renderHook(() =>
         useClassroomTimer({
           socket: mockSocket,
@@ -112,6 +116,44 @@ describe('useClassroomTimer Hook', () => {
       expect(mockSocket.emit).toHaveBeenCalledWith('timer:start', {
         sessionId: 'sess-123',
         duration: 60,
+      });
+
+      // Optimistically running without waiting for server event
+      expect(result.current.isRunning).toBe(true);
+      expect(result.current.remaining).toBe(60);
+    });
+
+    it('optimistically pauses and resets without waiting for server response', () => {
+      const { result } = renderHook(() =>
+        useClassroomTimer({
+          socket: mockSocket,
+          sessionId: 'sess-123',
+          isTeacher: true,
+        }),
+      );
+
+      // Start first
+      act(() => {
+        result.current.startTimer({ duration: 120 });
+      });
+      expect(result.current.isRunning).toBe(true);
+
+      // Pause optimistically
+      act(() => {
+        result.current.pauseTimer();
+      });
+      expect(result.current.isPaused).toBe(true);
+      expect(mockSocket.emit).toHaveBeenCalledWith('timer:pause', { sessionId: 'sess-123' });
+
+      // Reset optimistically
+      act(() => {
+        result.current.resetTimer(300);
+      });
+      expect(result.current.isIdle).toBe(true);
+      expect(result.current.remaining).toBe(300);
+      expect(mockSocket.emit).toHaveBeenCalledWith('timer:reset', {
+        sessionId: 'sess-123',
+        newDuration: 300,
       });
     });
 

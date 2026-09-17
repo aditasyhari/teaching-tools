@@ -31,7 +31,7 @@ export function EmptyState({
       {description && (
         <p className="text-sm text-slate-500 max-w-sm mb-6 leading-relaxed">{description}</p>
       )}
-      {action && <div className="mt-1">{action}</div>}
+      {action && <div className={cn(description ? 'mt-1' : 'mt-5', 'inline-flex')}>{action}</div>}
     </div>
   );
 }

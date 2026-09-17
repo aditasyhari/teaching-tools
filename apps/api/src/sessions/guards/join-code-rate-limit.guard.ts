@@ -24,10 +24,8 @@ export class JoinCodeRateLimitGuard implements CanActivate {
     JoinCodeRateLimitGuard.ensureCleanupTimer();
   }
 
-  canActivate(context: ExecutionContext): boolean {
-    const req = context.switchToHttp().getRequest<Request>();
-    const clientIp = this.getClientIp(req);
-
+  static check(clientIp: string): { allowed: boolean; retryAfterSeconds: number } {
+    JoinCodeRateLimitGuard.ensureCleanupTimer();
     const now = Date.now();
     const record = JoinCodeRateLimitGuard.records.get(clientIp);
 
@@ -36,11 +34,24 @@ export class JoinCodeRateLimitGuard implements CanActivate {
         count: 1,
         resetAt: now + JoinCodeRateLimitGuard.WINDOW_MS,
       });
-      return true;
+      return { allowed: true, retryAfterSeconds: 0 };
     }
 
     if (record.count >= JoinCodeRateLimitGuard.MAX_REQUESTS) {
       const retryAfterSeconds = Math.ceil((record.resetAt - now) / 1000);
+      return { allowed: false, retryAfterSeconds };
+    }
+
+    record.count += 1;
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  canActivate(context: ExecutionContext): boolean {
+    const req = context.switchToHttp().getRequest<Request>();
+    const clientIp = this.getClientIp(req);
+    const { allowed, retryAfterSeconds } = JoinCodeRateLimitGuard.check(clientIp);
+
+    if (!allowed) {
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
@@ -51,7 +62,6 @@ export class JoinCodeRateLimitGuard implements CanActivate {
       );
     }
 
-    record.count += 1;
     return true;
   }
 

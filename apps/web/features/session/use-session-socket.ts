@@ -6,6 +6,7 @@ import type {
   SessionStatus,
   SessionSnapshot,
   ParticipantSessionSnapshot,
+  ProjectorSessionSnapshot,
   SessionParticipantJoinedPayload,
   SessionParticipantLeftPayload,
   SessionStartedPayload,
@@ -18,6 +19,7 @@ export type SocketConnectionStatus = 'CONNECTING' | 'CONNECTED' | 'RECONNECTING'
 
 interface UseSessionSocketOptions {
   isTeacher?: boolean;
+  isProjector?: boolean;
   sessionId?: string;
   joinCode?: string;
   displayName?: string;
@@ -31,6 +33,7 @@ interface UseSessionSocketOptions {
 export function useSessionSocket(options: UseSessionSocketOptions) {
   const {
     isTeacher = false,
+    isProjector = false,
     sessionId,
     joinCode,
     displayName,
@@ -42,12 +45,13 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
   } = options;
 
   const [connectionStatus, setConnectionStatus] = useState<SocketConnectionStatus>('DISCONNECTED');
-  const [snapshot, setSnapshot] = useState<SessionSnapshot | ParticipantSessionSnapshot | null>(
-    null,
-  );
+  const [snapshot, setSnapshot] = useState<
+    SessionSnapshot | ParticipantSessionSnapshot | ProjectorSessionSnapshot | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
+  const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const participantIdRef = useRef<string | null>(null);
@@ -96,20 +100,36 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
         joinCode,
         isTeacher: true,
       });
+    } else if (isProjector) {
+      if (!joinCode) return;
+      socket.emit('session:join', {
+        joinCode: joinCode.trim().toUpperCase(),
+        isProjector: true,
+      });
     } else {
       if (!joinCode || !displayName) return;
+      const activeParticipantId =
+        typeof window !== 'undefined'
+          ? sessionStorage.getItem('wk_participant_id')
+          : participantIdRef.current;
+      const activeReconnectToken =
+        typeof window !== 'undefined'
+          ? sessionStorage.getItem('wk_reconnect_token')
+          : reconnectTokenRef.current;
+
       socket.emit('session:join', {
         joinCode: joinCode.trim().toUpperCase(),
         displayName: displayName.trim(),
-        participantId: participantIdRef.current || undefined,
-        reconnectToken: reconnectTokenRef.current || undefined,
+        participantId: activeParticipantId || undefined,
+        reconnectToken: activeReconnectToken || undefined,
       });
     }
-  }, [isTeacher, sessionId, joinCode, displayName]);
+  }, [isTeacher, isProjector, sessionId, joinCode, displayName]);
 
   useEffect(() => {
     if (isTeacher && !sessionId && !joinCode) return;
-    if (!isTeacher && (!joinCode || !displayName)) return;
+    if (isProjector && !joinCode) return;
+    if (!isTeacher && !isProjector && (!joinCode || !displayName)) return;
 
     // Robust origin resolution: safe against /api/v1 suffix and trailing slashes
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4006';
@@ -132,6 +152,7 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
     });
 
     socketRef.current = socket;
+    setSocketInstance(socket);
     setConnectionStatus('CONNECTING');
 
     socket.on('connect', () => {
@@ -157,21 +178,24 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
     });
 
     // Event: session:state
-    socket.on('session:state', (data: SessionSnapshot | ParticipantSessionSnapshot) => {
-      setSnapshot(data);
+    socket.on(
+      'session:state',
+      (data: SessionSnapshot | ParticipantSessionSnapshot | ProjectorSessionSnapshot) => {
+        setSnapshot(data);
 
-      // Store participantId and reconnectToken in sessionStorage for reconnect
-      if (!isTeacher && 'currentParticipant' in data) {
-        participantIdRef.current = data.currentParticipant.id;
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('wk_participant_id', data.currentParticipant.id);
-          if (data.currentParticipant.reconnectToken) {
-            reconnectTokenRef.current = data.currentParticipant.reconnectToken;
-            sessionStorage.setItem('wk_reconnect_token', data.currentParticipant.reconnectToken);
+        // Store participantId and reconnectToken in sessionStorage for reconnect
+        if (!isTeacher && !isProjector && 'currentParticipant' in data) {
+          participantIdRef.current = data.currentParticipant.id;
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('wk_participant_id', data.currentParticipant.id);
+            if (data.currentParticipant.reconnectToken) {
+              reconnectTokenRef.current = data.currentParticipant.reconnectToken;
+              sessionStorage.setItem('wk_reconnect_token', data.currentParticipant.reconnectToken);
+            }
           }
         }
-      }
-    });
+      },
+    );
 
     // Event: session:participant-joined
     socket.on('session:participant-joined', (payload: SessionParticipantJoinedPayload) => {
@@ -181,7 +205,13 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
           const exists = prev.participants.some((p) => p.id === payload.participant.id);
           const updatedList = exists
             ? prev.participants.map((p) =>
-                p.id === payload.participant.id ? { ...p, isOnline: true } : p,
+                p.id === payload.participant.id
+                  ? {
+                      ...p,
+                      isOnline: true,
+                      displayName: payload.participant.displayName || p.displayName,
+                    }
+                  : p,
               )
             : [
                 ...prev.participants,
@@ -275,9 +305,11 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
       }
       socket.disconnect();
       socketRef.current = null;
+      setSocketInstance(null);
     };
   }, [
     isTeacher,
+    isProjector,
     sessionId,
     joinCode,
     displayName,
@@ -286,22 +318,38 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
 
   const startSession = useCallback(() => {
     if (!socketRef.current || !sessionId) return;
+    // Optimistic update for 0ms button reaction
+    setSnapshot((prev) =>
+      prev ? { ...prev, status: 'ACTIVE', startedAt: new Date().toISOString() } : prev,
+    );
     socketRef.current.emit('session:start', { sessionId });
   }, [sessionId]);
 
   const endSession = useCallback(() => {
     if (!socketRef.current || !sessionId) return;
+    // Optimistic update for 0ms button reaction
+    setSnapshot((prev) =>
+      prev ? { ...prev, status: 'ENDED', endedAt: new Date().toISOString() } : prev,
+    );
     socketRef.current.emit('session:end', { sessionId });
   }, [sessionId]);
 
   const leaveSession = useCallback(() => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('session:leave', {
-      sessionId: sessionId || snapshot?.id,
-      participantId: participantIdRef.current || undefined,
-    });
-    socketRef.current.disconnect();
+    if (socketRef.current) {
+      socketRef.current.emit('session:leave', {
+        sessionId: sessionId || snapshot?.id,
+        participantId: participantIdRef.current || undefined,
+      });
+      socketRef.current.disconnect();
+    }
+    participantIdRef.current = null;
+    reconnectTokenRef.current = null;
     setConnectionStatus('DISCONNECTED');
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('wk_participant_id');
+      sessionStorage.removeItem('wk_reconnect_token');
+      sessionStorage.removeItem('wk_participant_session');
+    }
   }, [sessionId, snapshot?.id]);
 
   return {
@@ -312,6 +360,6 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
     endSession,
     leaveSession,
     participantId: participantIdRef.current,
-    socket: socketRef.current,
+    socket: socketInstance || socketRef.current,
   };
 }

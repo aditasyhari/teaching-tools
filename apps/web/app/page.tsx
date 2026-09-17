@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import React from 'react';
 import {
   LandingNavbar,
@@ -11,6 +12,15 @@ import {
   FinalCtaSection,
   LandingFooter,
 } from '../components/landing';
+
+export const metadata: Metadata = {
+  title: 'WaliKelas Teaching Tools — Pembelajaran Interaktif di Kelas',
+  description:
+    'Platform perkakas mengajar praktis guru Indonesia. Kuis interaktif, polling siswa, timer kelas, random picker, dan mode proyektor tanpa instalasi rumit.',
+  alternates: {
+    canonical: '/',
+  },
+};
 
 export default function HomePage(): React.JSX.Element {
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 export type GroupMode = 'BY_COUNT' | 'BY_SIZE';
 
@@ -72,7 +72,7 @@ export function useGroupMaker(initialRawInput = '') {
   const [groups, setGroups] = useState<GroupResult[]>([]);
   const [hasGenerated, setHasGenerated] = useState(false);
 
-  const items = parseItems(rawInput);
+  const items = useMemo(() => parseItems(rawInput), [rawInput]);
 
   const generate = useCallback(() => {
     if (items.length === 0) {

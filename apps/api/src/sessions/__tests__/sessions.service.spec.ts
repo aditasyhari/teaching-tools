@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SessionsService } from '../sessions.service';
 import { ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 
@@ -12,9 +12,10 @@ describe('SessionsService (Lifecycle, IDOR & Join Code)', () => {
       session: {
         findFirst: vi.fn(),
         findUnique: vi.fn(),
-        findMany: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
         create: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
       classroom: {
         findFirst: vi.fn(),
@@ -29,6 +30,10 @@ describe('SessionsService (Lifecycle, IDOR & Join Code)', () => {
     };
 
     service = new SessionsService(mockPrisma, mockMemory);
+  });
+
+  afterEach(() => {
+    service.onModuleDestroy();
   });
 
   const sampleSession = {
@@ -214,6 +219,37 @@ describe('SessionsService (Lifecycle, IDOR & Join Code)', () => {
       await expect(service.findOne('sess-123', 'intruder-teacher')).rejects.toThrow(
         ForbiddenException,
       );
+    });
+  });
+
+  describe('expireStaleSessions', () => {
+    it('expires sessions older than 6 hours and clears memory', async () => {
+      mockPrisma.session.findMany.mockResolvedValue([
+        { id: 'sess-old-1' },
+        { id: 'sess-old-2' },
+      ]);
+      mockPrisma.session.updateMany.mockResolvedValue({ count: 2 });
+
+      const count = await service.expireStaleSessions();
+
+      expect(count).toBe(2);
+      expect(mockPrisma.session.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: { in: ['sess-old-1', 'sess-old-2'] } },
+          data: expect.objectContaining({ status: 'ENDED' }),
+        }),
+      );
+      expect(mockMemory.clearSession).toHaveBeenCalledWith('sess-old-1');
+      expect(mockMemory.clearSession).toHaveBeenCalledWith('sess-old-2');
+    });
+
+    it('returns 0 when no stale sessions exist', async () => {
+      mockPrisma.session.findMany.mockResolvedValue([]);
+
+      const count = await service.expireStaleSessions();
+
+      expect(count).toBe(0);
+      expect(mockPrisma.session.updateMany).not.toHaveBeenCalled();
     });
   });
 });

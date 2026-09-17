@@ -20,14 +20,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/tools/question-box',
     '/tools/raise-hand',
     '/tools/brainstorm-board',
+    '/tools/word-cloud',
     '/tools/exit-ticket',
+    '/tools/flashcards',
   ];
 
   return publicRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: now,
     changeFrequency: route === '' ? 'daily' : 'weekly',
-    priority: route === '' ? 1.0 : route.startsWith('/tools') ? 0.8 : 0.6,
+    priority: route === '' ? 1.0 : route === '/tools' ? 0.9 : route.startsWith('/tools') ? 0.8 : 0.6,
   }));
 }
-

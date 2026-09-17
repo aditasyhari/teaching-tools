@@ -9,6 +9,7 @@ import { cn } from '../../utils/cn.js';
 export interface ToolGridProps {
   tools: ToolMetadata[];
   onSelectTool?: (tool: ToolMetadata) => void;
+  onHoverTool?: (tool: ToolMetadata) => void;
   categoryFilter?: string;
   searchQuery?: string;
   emptyTitle?: string;
@@ -21,6 +22,7 @@ export interface ToolGridProps {
 export function ToolGrid({
   tools,
   onSelectTool,
+  onHoverTool,
   categoryFilter,
   searchQuery,
   emptyTitle = 'Perkakas tidak ditemukan',
@@ -86,6 +88,7 @@ export function ToolGrid({
           tool={tool}
           icon={toolIcons ? toolIcons[tool.id] : undefined}
           onAction={onSelectTool}
+          onHover={onHoverTool}
         />
       ))}
     </div>

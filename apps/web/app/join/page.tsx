@@ -3,8 +3,12 @@ import type { Metadata } from 'next';
 import { ParticipantJoinView } from '../../features/session/participant-join-view';
 
 export const metadata: Metadata = {
-  title: 'Gabung Sesi Kelas | WaliKelas Teaching Tools',
-  description: 'Gabung ke sesi kelas interaktif guru Anda secara langsung.',
+  title: 'Gabung Sesi Kelas Murid',
+  description:
+    'Masukkan 6 digit kode sesi atau pindai kode QR untuk masuk ke aktivitas kelas interaktif dari ponsel Anda.',
+  alternates: {
+    canonical: '/join',
+  },
 };
 
 interface JoinPageProps {

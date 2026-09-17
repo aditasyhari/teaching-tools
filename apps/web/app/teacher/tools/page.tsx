@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Clock,
   Shuffle,
@@ -16,6 +17,9 @@ import {
   CheckCircle2,
   Layers,
   Play,
+  ExternalLink,
+  Radio,
+  BookOpen,
 } from 'lucide-react';
 import {
   PageHeaderSection,
@@ -29,9 +33,12 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  Spinner,
 } from '@walikelas/ui';
 import { TOOLS, TEACHER_CATEGORIES } from '@walikelas/config';
 import type { ToolMetadata, TeacherToolCategory } from '@walikelas/types';
+import { useAuth } from '@/lib/auth-context';
+import { useSessionModal } from '@/features/session/session-modal-context';
 
 const toolIcons: Record<string, React.ReactNode> = {
   timer: <Clock className="w-5 h-5 text-amber-600" />,
@@ -51,10 +58,43 @@ const toolIcons: Record<string, React.ReactNode> = {
 
 type CategoryFilter = 'ALL' | TeacherToolCategory;
 
-export default function TeacherToolsPage(): React.JSX.Element {
+function TeacherToolsContent(): React.JSX.Element {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { activeClassroom } = useAuth();
+  const { openCreateModal } = useSessionModal();
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('ALL');
   const [activeModalTool, setActiveModalTool] = useState<ToolMetadata | null>(null);
+
+  const launchParam = searchParams.get('launch');
+
+  // Handle incoming ?launch=[toolId]
+  useEffect(() => {
+    if (launchParam) {
+      const targetTool = TOOLS.find((t) => t.id === launchParam);
+      if (targetTool) {
+        if (!targetTool.isInteractive && targetTool.teacherRoute) {
+          router.replace(targetTool.teacherRoute);
+        } else {
+          setActiveModalTool(targetTool);
+        }
+      }
+    }
+  }, [launchParam, router]);
+
+  const handleHoverTool = (tool: ToolMetadata) => {
+    const destination = tool.teacherRoute || tool.route;
+    try {
+      router.prefetch(destination);
+    } catch {}
+  };
+
+  const handleLaunchInConsole = (tool: ToolMetadata) => {
+    setActiveModalTool(null);
+    const destination = tool.teacherRoute || tool.route;
+    router.push(destination);
+  };
 
   return (
     <div className="space-y-6">
@@ -103,6 +143,7 @@ export default function TeacherToolsPage(): React.JSX.Element {
         searchQuery={searchQuery}
         toolIcons={toolIcons}
         onSelectTool={(tool) => setActiveModalTool(tool)}
+        onHoverTool={handleHoverTool}
       />
 
       {/* Tool Launch Modal */}
@@ -133,52 +174,169 @@ export default function TeacherToolsPage(): React.JSX.Element {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="bg-muted/40 p-3.5 rounded-xl border border-border text-xs text-muted-foreground space-y-1.5">
+            {/* Context Information Box */}
+            <div className="bg-muted/40 p-3.5 rounded-xl border border-border text-xs text-muted-foreground space-y-2">
               <div className="flex justify-between">
-                <span className="font-medium">Tipe Eksekusi:</span>
+                <span className="font-medium">Tipe Aktivitas:</span>
                 <span className="font-bold text-foreground">
-                  {activeModalTool.isInteractive ? 'Realtime Classroom' : 'Client Browser'}
+                  {activeModalTool.isInteractive
+                    ? 'Interaktif Realtime (Sesi Kelas)'
+                    : 'Utilitas Ruang Guru'}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Otorisasi Guru:</span>
-                <span className="font-bold text-foreground">
-                  {activeModalTool.requiresAuth ? 'Perlu Login Google' : 'Tanpa Akun'}
-                </span>
-              </div>
+
+              {!activeModalTool.isInteractive &&
+                (activeModalTool.id === 'random-picker' ||
+                  activeModalTool.id === 'group-maker') && (
+                  <div className="flex justify-between items-center pt-1 border-t border-border/50">
+                    <span className="font-medium">Konteks Kelas:</span>
+                    <span className="font-bold text-foreground flex items-center gap-1">
+                      <BookOpen className="w-3 h-3 text-blue-600" />
+                      {activeClassroom ? activeClassroom.name : 'Belum dipilih (Gunakan nama contoh)'}
+                    </span>
+                  </div>
+                )}
+
+              {activeModalTool.isInteractive && (
+                <div className="pt-1.5 border-t border-border/50 text-[11px] text-stone-600 dark:text-stone-300 leading-relaxed">
+                  Perkakas ini memerlukan <strong>Sesi Kelas</strong> yang aktif agar siswa dapat
+                  bergabung dengan kode 6 digit dan berpartisipasi langsung dari gawai masing-masing.
+                </div>
+              )}
             </div>
 
+            {/* Modal Actions */}
             <DialogFooter className="gap-2 sm:gap-2 pt-2">
-              <Button
-                variant="secondary"
-                size="md"
-                className="flex-1"
-                onClick={() => setActiveModalTool(null)}
-              >
-                Batal
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                className="flex-1"
-                leftIcon={<Play className="w-4 h-4" />}
-                onClick={() => {
-                  if (activeModalTool.status === 'AVAILABLE' && activeModalTool.route) {
-                    window.location.href = activeModalTool.route;
-                  } else {
-                    alert(
-                      `Perkakas "${activeModalTool.name}" akan hadir pada fase interaktif berikutnya.`,
-                    );
-                    setActiveModalTool(null);
-                  }
-                }}
-              >
-                Luncurkan
-              </Button>
+              {activeModalTool.status === 'COMING_SOON' ? (
+                <div className="w-full flex items-center justify-between gap-3">
+                  <Badge variant="neutral" size="sm">
+                    Segera Hadir
+                  </Badge>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    className="flex-1"
+                    onClick={() => setActiveModalTool(null)}
+                  >
+                    Tutup
+                  </Button>
+                </div>
+              ) : activeModalTool.isInteractive ? (
+                <div className="w-full space-y-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      className="sm:w-1/3"
+                      onClick={() => setActiveModalTool(null)}
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      className="flex-1"
+                      leftIcon={<Radio className="w-4 h-4" />}
+                      onClick={() => {
+                        setActiveModalTool(null);
+                        if (activeModalTool.id === 'live-quiz') {
+                          router.push('/teacher/quizzes');
+                        } else if (activeModalTool.id === 'live-poll') {
+                          router.push('/teacher/polls');
+                        } else {
+                          openCreateModal({
+                            defaultTitle: `Sesi ${activeModalTool.name}`,
+                          });
+                        }
+                      }}
+                    >
+                      Mulai di Sesi Kelas
+                    </Button>
+                  </div>
+
+                  {activeModalTool.id === 'live-quiz' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs font-semibold"
+                      onClick={() => {
+                        setActiveModalTool(null);
+                        router.push('/teacher/quizzes');
+                      }}
+                    >
+                      Kelola Bank Soal Kuis
+                    </Button>
+                  )}
+
+                  {activeModalTool.id === 'live-poll' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs font-semibold"
+                      onClick={() => {
+                        setActiveModalTool(null);
+                        router.push('/teacher/polls');
+                      }}
+                    >
+                      Kelola Daftar Jajak Pendapat
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="w-full space-y-2">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      className="flex-1"
+                      onClick={() => setActiveModalTool(null)}
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      className="flex-1"
+                      leftIcon={<Play className="w-4 h-4 fill-current" />}
+                      onClick={() => handleLaunchInConsole(activeModalTool)}
+                    >
+                      Buka Perkakas
+                    </Button>
+                  </div>
+
+                  {activeModalTool.route && (
+                    <div className="text-center pt-1">
+                      <a
+                        href={activeModalTool.route}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-stone-500 hover:text-stone-800 font-medium inline-flex items-center gap-1 hover:underline"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>Buka dalam Mode Mandiri Bebas Navigasi (Tab Baru)</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
             </DialogFooter>
           </DialogContent>
         )}
       </Dialog>
     </div>
+  );
+}
+
+export default function TeacherToolsPage(): React.JSX.Element {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[40vh] flex items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
+      <TeacherToolsContent />
+    </Suspense>
   );
 }

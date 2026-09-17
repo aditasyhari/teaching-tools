@@ -6,7 +6,7 @@ interface SocketEntry {
   socketId: string;
   sessionId: string;
   participantId: string;
-  role: 'TEACHER' | 'PARTICIPANT';
+  role: 'TEACHER' | 'PARTICIPANT' | 'PROJECTOR';
 }
 
 /**
@@ -30,6 +30,9 @@ export class SessionMemoryService implements OnModuleDestroy {
   // sessionId -> Set<socketId> (teacher sockets)
   private readonly teacherSockets = new Map<string, Set<string>>();
 
+  // sessionId -> Set<socketId> (projector sockets)
+  private readonly projectorSockets = new Map<string, Set<string>>();
+
   // Cleanup interval
   private cleanupInterval: NodeJS.Timeout | null = null;
 
@@ -48,6 +51,7 @@ export class SessionMemoryService implements OnModuleDestroy {
     this.sessions.clear();
     this.sockets.clear();
     this.teacherSockets.clear();
+    this.projectorSockets.clear();
   }
 
   /**
@@ -72,11 +76,11 @@ export class SessionMemoryService implements OnModuleDestroy {
     if (existingParticipantId && sessionMap.has(existingParticipantId)) {
       const existing = sessionMap.get(existingParticipantId)!;
       // SEC-002: Reconnect token validation to prevent identity hijacking
-      if (!existing.reconnectToken || existing.reconnectToken === reconnectToken) {
+      if (existing.reconnectToken && existing.reconnectToken === reconnectToken) {
         existing.isOnline = true;
         existing.lastSeenAt = now;
-        if (!existing.reconnectToken) {
-          existing.reconnectToken = `rt_${randomUUID().replace(/-/g, '')}`;
+        if (displayName && displayName.trim()) {
+          existing.displayName = displayName.trim();
         }
         if (socketId) {
           this.sockets.set(socketId, {
@@ -150,6 +154,36 @@ export class SessionMemoryService implements OnModuleDestroy {
   }
 
   /**
+   * Register a projector's socket connection for a session.
+   * Projector screens are passive display mirrors and are NEVER counted as student participants.
+   */
+  registerProjector(sessionId: string, socketId: string): void {
+    let projectors = this.projectorSockets.get(sessionId);
+    if (!projectors) {
+      projectors = new Set<string>();
+      this.projectorSockets.set(sessionId, projectors);
+    }
+    projectors.add(socketId);
+
+    this.sockets.set(socketId, {
+      socketId,
+      sessionId,
+      participantId: 'projector',
+      role: 'PROJECTOR',
+    });
+
+    this.logger.log(`Projector connected: session ${sessionId} (socket: ${socketId})`);
+  }
+
+  /**
+   * Get all projector socket IDs in a session.
+   */
+  getProjectorSockets(sessionId: string): string[] {
+    const projectors = this.projectorSockets.get(sessionId);
+    return projectors ? Array.from(projectors) : [];
+  }
+
+  /**
    * Get all teacher socket IDs in a session.
    */
   getTeacherSockets(sessionId: string): string[] {
@@ -209,7 +243,7 @@ export class SessionMemoryService implements OnModuleDestroy {
   handleDisconnect(socketId: string): {
     sessionId: string;
     participant?: SessionParticipant;
-    role: 'TEACHER' | 'PARTICIPANT';
+    role: 'TEACHER' | 'PARTICIPANT' | 'PROJECTOR';
   } | null {
     const entry = this.sockets.get(socketId);
     if (!entry) return null;
@@ -226,6 +260,18 @@ export class SessionMemoryService implements OnModuleDestroy {
       }
       this.logger.log(`Teacher disconnected from session ${entry.sessionId}`);
       return { sessionId: entry.sessionId, role: 'TEACHER' };
+    }
+
+    if (entry.role === 'PROJECTOR') {
+      const projectors = this.projectorSockets.get(entry.sessionId);
+      if (projectors) {
+        projectors.delete(socketId);
+        if (projectors.size === 0) {
+          this.projectorSockets.delete(entry.sessionId);
+        }
+      }
+      this.logger.log(`Projector disconnected from session ${entry.sessionId}`);
+      return { sessionId: entry.sessionId, role: 'PROJECTOR' };
     }
 
     // Participant disconnect: check if participant has other active sockets (e.g. multi-tab)
@@ -254,6 +300,7 @@ export class SessionMemoryService implements OnModuleDestroy {
   clearSession(sessionId: string): void {
     this.sessions.delete(sessionId);
     this.teacherSockets.delete(sessionId);
+    this.projectorSockets.delete(sessionId);
 
     // Clean up socket entries pointing to this session
     for (const [socketId, entry] of this.sockets.entries()) {
@@ -278,7 +325,7 @@ export class SessionMemoryService implements OnModuleDestroy {
           this.logger.debug(`Purged stale participant ${pId} from session ${sessionId}`);
         }
       }
-      if (map.size === 0 && !this.teacherSockets.has(sessionId)) {
+      if (map.size === 0 && !this.teacherSockets.has(sessionId) && !this.projectorSockets.has(sessionId)) {
         this.sessions.delete(sessionId);
       }
     }

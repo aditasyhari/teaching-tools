@@ -38,6 +38,7 @@ export interface ToolMetadata {
   requiresAuth: boolean;
   priority: 'P0' | 'P1' | 'P2';
   route: string;
+  teacherRoute?: string;
   iconName: string;
   status: 'AVAILABLE' | 'COMING_SOON';
 }

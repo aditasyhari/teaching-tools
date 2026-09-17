@@ -235,18 +235,24 @@ export function useBrainstorm({ socket, sessionId, isTeacher = false }: UseBrain
   const openActivity = useCallback(() => {
     if (!socket || !sessionIdRef.current) return;
     setError(null);
+    // Optimistic 0ms update
+    setActivity((prev) => (prev ? { ...prev, status: 'OPEN' } : prev));
     socket.emit('brainstorm:open', { sessionId: sessionIdRef.current });
   }, [socket]);
 
   const pauseActivity = useCallback(() => {
     if (!socket || !sessionIdRef.current) return;
     setError(null);
+    // Optimistic 0ms update
+    setActivity((prev) => (prev ? { ...prev, status: 'PAUSED' } : prev));
     socket.emit('brainstorm:pause', { sessionId: sessionIdRef.current });
   }, [socket]);
 
   const closeActivity = useCallback(() => {
     if (!socket || !sessionIdRef.current) return;
     setError(null);
+    // Optimistic 0ms update
+    setActivity((prev) => (prev ? { ...prev, status: 'CLOSED' } : prev));
     socket.emit('brainstorm:close', { sessionId: sessionIdRef.current });
   }, [socket]);
 
@@ -254,6 +260,13 @@ export function useBrainstorm({ socket, sessionId, isTeacher = false }: UseBrain
     (ideaId: string) => {
       if (!socket || !sessionIdRef.current) return;
       setError(null);
+      // Optimistic 0ms update
+      setIdeas((prev) =>
+        prev.map((i) => (i.id === ideaId ? { ...i, status: 'HIDDEN' } : i)),
+      );
+      setVisibleCount((prev) => Math.max(0, prev - 1));
+      setHiddenCount((prev) => prev + 1);
+
       socket.emit('brainstorm:hide', {
         sessionId: sessionIdRef.current,
         ideaId,
@@ -266,6 +279,13 @@ export function useBrainstorm({ socket, sessionId, isTeacher = false }: UseBrain
     (ideaId: string) => {
       if (!socket || !sessionIdRef.current) return;
       setError(null);
+      // Optimistic 0ms update
+      setIdeas((prev) =>
+        prev.map((i) => (i.id === ideaId ? { ...i, status: 'VISIBLE' } : i)),
+      );
+      setVisibleCount((prev) => prev + 1);
+      setHiddenCount((prev) => Math.max(0, prev - 1));
+
       socket.emit('brainstorm:restore', {
         sessionId: sessionIdRef.current,
         ideaId,

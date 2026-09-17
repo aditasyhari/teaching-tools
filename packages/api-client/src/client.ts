@@ -57,11 +57,21 @@ export class ApiClient {
       ...(customHeaders as Record<string, string>),
     };
 
-    const response = await fetch(url, {
-      credentials: fetchOptions.credentials || this.credentials,
-      ...fetchOptions,
-      headers: mergedHeaders,
-    });
+    const timeoutMs = 4000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        credentials: fetchOptions.credentials || this.credentials,
+        signal: fetchOptions.signal || controller.signal,
+        ...fetchOptions,
+        headers: mergedHeaders,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     const requestId = response.headers.get('x-request-id') || undefined;
 

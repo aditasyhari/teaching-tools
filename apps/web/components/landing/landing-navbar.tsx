@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Sparkles, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@walikelas/ui';
 import { useAuth } from '../../lib/auth-context';
+import { BrandLogo } from '../common/brand-logo';
 
 export function LandingNavbar(): React.JSX.Element {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -35,18 +36,8 @@ export function LandingNavbar(): React.JSX.Element {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left Brand & Navigation */}
         <div className="flex items-center">
-          <Link href="/" className="flex items-center gap-2.5 focus:outline-none">
-            <div className="w-9 h-9 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center font-black text-base shadow-xs ring-2 ring-amber-400/30">
-              <Sparkles className="w-5 h-5 fill-stone-950" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-base sm:text-lg leading-tight text-stone-900 tracking-tight">
-                WaliKelas
-              </span>
-              <span className="text-[11px] font-semibold text-stone-500 leading-tight">
-                Teaching Tools
-              </span>
-            </div>
+          <Link href="/" className="flex items-center focus:outline-none">
+            <BrandLogo size="md" />
           </Link>
 
           {/* Desktop Navigation Links */}

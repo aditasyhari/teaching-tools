@@ -51,6 +51,23 @@ describe('SessionMemoryService', () => {
     expect(service.getOnlineParticipantCount('sess-1')).toBe(1);
   });
 
+  it('should update displayName on reconnect if a new displayName is provided', () => {
+    const initial = service.addParticipant('sess-1', 'Siti Rahma', undefined, 'socket-1');
+    const initialId = initial.id;
+
+    // Reconnect with a new name
+    const reconnected = service.addParticipant(
+      'sess-1',
+      'Siti Rahmawati',
+      initialId,
+      'socket-2',
+      initial.reconnectToken,
+    );
+    expect(reconnected.id).toBe(initialId);
+    expect(reconnected.displayName).toBe('Siti Rahmawati');
+    expect(service.getParticipant('sess-1', initialId)?.displayName).toBe('Siti Rahmawati');
+  });
+
   it('should register teacher socket and track entry', () => {
     service.registerTeacher('sess-1', 'teacher-socket-1');
     const entry = service.getSocketEntry('teacher-socket-1');
@@ -121,6 +138,12 @@ describe('SessionMemoryService', () => {
     // Must NOT re-bind Budi's ID
     expect(hijacked.id).not.toBe(initialId);
     expect(hijacked.displayName).toBe('Attacker Impersonator');
+
+    // 4. Attacker tries with undefined token
+    const hijackedNoToken = service.addParticipant('sess-1', 'Attacker No Token', initialId, 'sock-evil-2', undefined);
+    expect(hijackedNoToken.id).not.toBe(initialId);
+    expect(hijackedNoToken.displayName).toBe('Attacker No Token');
+
     // Budi's original record remains intact and offline until Budi returns
     const originalBudi = service.getParticipant('sess-1', initialId);
     expect(originalBudi?.id).toBe(initialId);
@@ -151,5 +174,30 @@ describe('SessionMemoryService', () => {
     // Now participant transitions to offline
     expect(p.isOnline).toBe(false);
     expect(service.getOnlineParticipantCount('sess-1')).toBe(0);
+  });
+
+  it('should register projector socket and track entry without incrementing student participant count', () => {
+    service.registerProjector('sess-1', 'projector-sock-1');
+    const entry = service.getSocketEntry('projector-sock-1');
+    expect(entry).toBeDefined();
+    expect(entry?.role).toBe('PROJECTOR');
+    expect(entry?.sessionId).toBe('sess-1');
+
+    // Projector must NEVER be counted as a student participant
+    expect(service.getParticipants('sess-1')).toHaveLength(0);
+    expect(service.getOnlineParticipantCount('sess-1')).toBe(0);
+    expect(service.getProjectorSockets('sess-1')).toEqual(['projector-sock-1']);
+
+    // Now add a real student participant
+    service.addParticipant('sess-1', 'Budi Santoso', undefined, 'student-sock-1');
+    expect(service.getParticipants('sess-1')).toHaveLength(1);
+    expect(service.getOnlineParticipantCount('sess-1')).toBe(1);
+
+    // Disconnecting projector does not affect student count
+    const projDisconn = service.handleDisconnect('projector-sock-1');
+    expect(projDisconn?.role).toBe('PROJECTOR');
+    expect(projDisconn?.participant).toBeUndefined();
+    expect(service.getOnlineParticipantCount('sess-1')).toBe(1);
+    expect(service.getProjectorSockets('sess-1')).toHaveLength(0);
   });
 });

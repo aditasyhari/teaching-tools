@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
   Logger,
+  OnModuleDestroy,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionMemoryService } from './session-memory.service';
@@ -11,20 +12,77 @@ import type {
   TeachingSession,
   SessionSnapshot,
   ParticipantSessionSnapshot,
+  ProjectorSessionSnapshot,
   SessionParticipant,
 } from '@walikelas/types';
 import type { CreateSessionInput } from '@walikelas/validation';
 import { JOIN_CODE_CHARACTERS, JOIN_CODE_LENGTH } from '@walikelas/config';
 import { randomInt } from 'crypto';
 
+/**
+ * Maximum lifetime for any classroom session (6 hours).
+ * After 6 hours, sessions are automatically considered expired and transitioned to ENDED.
+ */
+export const MAX_SESSION_DURATION_MS = 6 * 60 * 60 * 1000;
+
 @Injectable()
-export class SessionsService {
+export class SessionsService implements OnModuleDestroy {
   private readonly logger = new Logger(SessionsService.name);
+  private expireInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly memory: SessionMemoryService,
-  ) {}
+  ) {
+    // Periodically run background stale session cleanup every 5 minutes
+    this.expireInterval = setInterval(() => {
+      this.expireStaleSessions().catch((err) => {
+        this.logger.error(`Error during expireStaleSessions: ${err.message}`);
+      });
+    }, 5 * 60 * 1000);
+  }
+
+  onModuleDestroy(): void {
+    if (this.expireInterval) {
+      clearInterval(this.expireInterval);
+      this.expireInterval = null;
+    }
+  }
+
+  /**
+   * Automatically transition sessions older than MAX_SESSION_DURATION_MS to ENDED.
+   * Cleans up both database status and transient in-memory state.
+   */
+  async expireStaleSessions(): Promise<number> {
+    const threshold = new Date(Date.now() - MAX_SESSION_DURATION_MS);
+    const staleSessions = await this.prisma.session.findMany({
+      where: {
+        status: { in: ['WAITING', 'ACTIVE'] },
+        createdAt: { lt: threshold },
+      },
+      select: { id: true },
+    });
+
+    if (staleSessions.length === 0) return 0;
+
+    const now = new Date();
+    await this.prisma.session.updateMany({
+      where: {
+        id: { in: staleSessions.map((s) => s.id) },
+      },
+      data: {
+        status: 'ENDED',
+        endedAt: now,
+      },
+    });
+
+    for (const s of staleSessions) {
+      this.memory.clearSession(s.id);
+    }
+
+    this.logger.log(`Auto-expired ${staleSessions.length} sessions older than 6 hours.`);
+    return staleSessions.length;
+  }
 
   /**
    * Generate a random collision-resistant uppercase alphanumeric join code.
@@ -78,6 +136,26 @@ export class SessionsService {
       }
     }
 
+    // Auto-end any lingering WAITING or ACTIVE sessions previously created by this teacher
+    const lingeringSessions = await this.prisma.session.findMany({
+      where: {
+        teacherId,
+        status: { in: ['WAITING', 'ACTIVE'] },
+      },
+      select: { id: true },
+    });
+
+    if (lingeringSessions.length > 0) {
+      await this.prisma.session.updateMany({
+        where: { id: { in: lingeringSessions.map((s) => s.id) } },
+        data: { status: 'ENDED', endedAt: new Date() },
+      });
+      for (const s of lingeringSessions) {
+        this.memory.clearSession(s.id);
+      }
+      this.logger.log(`Auto-ended ${lingeringSessions.length} lingering sessions for teacher ${teacherId}`);
+    }
+
     const joinCode = await this.generateUniqueJoinCode();
 
     const session = await this.prisma.session.create({
@@ -121,6 +199,9 @@ export class SessionsService {
    * List all teaching sessions owned by the authenticated teacher.
    */
   async findAllTeacherSessions(teacherId: string): Promise<TeachingSession[]> {
+    // Run stale session cleanup
+    await this.expireStaleSessions();
+
     const sessions = await this.prisma.session.findMany({
       where: { teacherId },
       orderBy: { createdAt: 'desc' },
@@ -339,11 +420,25 @@ export class SessionsService {
         title: true,
         joinCode: true,
         status: true,
+        createdAt: true,
       },
     });
 
     if (!session) {
       throw new NotFoundException('Kode sesi tidak valid atau sesi telah berakhir');
+    }
+
+    // Just-in-time expiry: if session is older than MAX_SESSION_DURATION_MS, auto-expire
+    if (session.createdAt && Date.now() - new Date(session.createdAt).getTime() > MAX_SESSION_DURATION_MS) {
+      await this.prisma.session.update({
+        where: { id: session.id },
+        data: {
+          status: 'ENDED',
+          endedAt: new Date(),
+        },
+      });
+      this.memory.clearSession(session.id);
+      throw new NotFoundException('Sesi telah berakhir karena telah melebihi batas waktu maksimal');
     }
 
     return {
@@ -415,6 +510,36 @@ export class SessionsService {
         displayName,
         reconnectToken: participant?.reconnectToken,
       },
+      serverTime: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Get authoritative snapshot for projector screen.
+   * Projector displays receive session metadata and real-time student count
+   * without creating or registering a student participant.
+   */
+  async getProjectorSnapshot(sessionId: string): Promise<ProjectorSessionSnapshot> {
+    const session = await this.prisma.session.findUnique({
+      where: { id: sessionId },
+      select: {
+        id: true,
+        title: true,
+        joinCode: true,
+        status: true,
+      },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Sesi tidak ditemukan');
+    }
+
+    return {
+      id: session.id,
+      title: session.title,
+      joinCode: session.joinCode,
+      status: session.status as ProjectorSessionSnapshot['status'],
+      participantCount: this.memory.getOnlineParticipantCount(sessionId),
       serverTime: new Date().toISOString(),
     };
   }

@@ -104,11 +104,11 @@ export function QuizPickerModal({
             <span className="text-xs text-muted-foreground">Memuat kuis tersimpan...</span>
           </div>
         ) : quizzes.length === 0 ? (
-          <div className="py-8 text-center space-y-3">
+          <div className="py-10 flex flex-col items-center justify-center text-center gap-4">
             <p className="text-sm text-muted-foreground">
               Anda belum memiliki kuis yang siap dimainkan.
             </p>
-            <Link href="/teacher/quizzes/new" onClick={onClose}>
+            <Link href="/teacher/quizzes/new" onClick={onClose} className="inline-flex">
               <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
                 Buat Kuis Baru Sekarang
               </Button>

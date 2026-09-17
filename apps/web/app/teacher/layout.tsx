@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -22,13 +23,20 @@ import {
   Button,
   Spinner,
 } from '@walikelas/ui';
+import type { TeachingSession } from '@walikelas/types';
+import { fetchTeacherSessions } from '@walikelas/api-client';
+import { apiClient } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { TeacherLoginView } from '@/components/auth/teacher-login-view';
+import { SessionModalProvider, useSessionModal } from '@/features/session/session-modal-context';
 
-export default function TeacherLayout({ children }: { children?: any }) {
+function TeacherLayoutContent({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
+  const { openCreateModal } = useSessionModal();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [classDropdownOpen, setClassDropdownOpen] = useState(false);
+  const [activeSession, setActiveSession] = useState<TeachingSession | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const {
     user,
@@ -41,43 +49,182 @@ export default function TeacherLayout({ children }: { children?: any }) {
     logout,
   } = useAuth();
 
-  const navItems = [
+  // Check active session dynamically to power live badges
+  useEffect(() => {
+    let isMounted = true;
+    async function loadActiveSession() {
+      try {
+        const list = await fetchTeacherSessions(apiClient);
+        if (isMounted) {
+          const current = list.find((s) => s.status === 'ACTIVE' || s.status === 'WAITING');
+          setActiveSession(current || null);
+        }
+      } catch {
+        if (isMounted) setActiveSession(null);
+      }
+    }
+    if (isAuthenticated) {
+      loadActiveSession();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, pathname]);
+
+  // Close classroom dropdown when clicking outside or pressing Escape
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setClassDropdownOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setClassDropdownOpen(false);
+      }
+    }
+    if (classDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [classDropdownOpen]);
+
+  // Dynamic navigation sections — No redundant dead "Sesi Aktif" link
+  const navSections = [
+    ...(activeSession
+      ? [
+          {
+            title: 'Sesi Kelas Berlangsung',
+            items: [
+              {
+                label: activeSession.title || 'Konsol Sesi Aktif',
+                href: `/teacher/sessions/${activeSession.id}`,
+                icon: <Radio className="w-5 h-5 text-emerald-500 animate-pulse" />,
+                active: pathname.startsWith(`/teacher/sessions/${activeSession.id}`),
+                badge: activeSession.joinCode,
+              },
+            ],
+          },
+        ]
+      : []),
     {
-      label: 'Dasbor',
-      href: '/teacher',
-      icon: <LayoutDashboard className="w-5 h-5" />,
-      active: pathname === '/teacher',
-      badge: undefined,
+      title: 'Menu Utama',
+      items: [
+        {
+          label: 'Dasbor Guru',
+          href: '/teacher',
+          icon: <LayoutDashboard className="w-5 h-5" />,
+          active: pathname === '/teacher',
+        },
+        {
+          label: 'Perkakas Mengajar',
+          href: '/teacher/tools',
+          icon: <Wrench className="w-5 h-5" />,
+          active: pathname.startsWith('/teacher/tools'),
+          badge: '13',
+        },
+      ],
     },
     {
-      label: 'Perkakas Mengajar',
-      href: '/teacher/tools',
-      icon: <Wrench className="w-5 h-5" />,
-      active: pathname.startsWith('/teacher/tools'),
-      badge: '13',
-    },
-    {
-      label: 'Sesi Aktif',
-      href: '/teacher/sessions',
-      icon: <Radio className="w-5 h-5" />,
-      active: pathname.startsWith('/teacher/sessions'),
-      badge: undefined,
-    },
-    {
-      label: 'Kelas Saya',
-      href: '/teacher/classrooms',
-      icon: <FolderKanban className="w-5 h-5" />,
-      active: pathname.startsWith('/teacher/classrooms'),
-      badge: classrooms.length > 0 ? String(classrooms.length) : undefined,
-    },
-    {
-      label: 'Catatan Guru',
-      href: '/teacher/notes',
-      icon: <FileText className="w-5 h-5" />,
-      active: pathname.startsWith('/teacher/notes'),
-      badge: undefined,
+      title: 'Ruang Kelas & Bahan',
+      items: [
+        {
+          label: 'Kelas Saya',
+          href: '/teacher/classrooms',
+          icon: <FolderKanban className="w-5 h-5" />,
+          active: pathname.startsWith('/teacher/classrooms'),
+          badge: classrooms.length > 0 ? String(classrooms.length) : undefined,
+        },
+        {
+          label: 'Catatan Guru',
+          href: '/teacher/notes',
+          icon: <FileText className="w-5 h-5" />,
+          active: pathname.startsWith('/teacher/notes'),
+        },
+      ],
     },
   ];
+
+  const flatNavItems = navSections.flatMap((s) => s.items);
+
+  const brandConfig = {
+    name: 'WaliKelas',
+    subtitle: 'Teaching Tools',
+    href: '/teacher',
+    badge: 'Guru',
+    logo: (
+      <div className="w-8 h-8 rounded-lg bg-white border border-stone-200/80 p-1 flex items-center justify-center shadow-xs">
+        <img src="/logo.png" alt="WaliKelas" className="w-6 h-6 object-contain" />
+      </div>
+    ),
+  };
+
+  const renderSidebarLink = (props: {
+    href: string;
+    className: string;
+    children: React.ReactNode;
+    'aria-current'?: 'page';
+  }) => (
+    <Link
+      href={props.href}
+      className={props.className}
+      aria-current={props['aria-current']}
+      onClick={() => setMobileMenuOpen(false)}
+    >
+      {props.children as any}
+    </Link>
+  );
+
+  const sidebarFooter = (isMobile = false) => (
+    <div className="space-y-3">
+      {activeSession ? (
+        <Link
+          href={`/teacher/sessions/${activeSession.id}`}
+          onClick={() => isMobile && setMobileMenuOpen(false)}
+          className="block"
+        >
+          <Button
+            variant="primary"
+            size="sm"
+            className="w-full justify-center text-xs font-bold shadow-xs min-h-[40px] bg-emerald-600 hover:bg-emerald-700 text-white border-transparent"
+            leftIcon={<Radio className="w-4 h-4 animate-pulse" />}
+          >
+            Lanjutkan Konsol ({activeSession.joinCode})
+          </Button>
+        </Link>
+      ) : isMobile ? (
+        <Button
+          variant="default"
+          size="sm"
+          className="w-full justify-center text-xs font-bold shadow-xs min-h-[40px]"
+          leftIcon={<Plus className="w-4 h-4 stroke-[2.5]" />}
+          onClick={() => {
+            setMobileMenuOpen(false);
+            openCreateModal();
+          }}
+        >
+          Mulai Sesi Baru
+        </Button>
+      ) : null}
+      <div className="flex items-center justify-between px-1 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span
+            className={`w-1.5 h-1.5 rounded-full inline-block ${
+              activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-stone-300'
+            }`}
+          />
+          <span className="font-medium text-stone-600">
+            {activeSession ? 'Sesi Aktif' : 'Standby'}
+          </span>
+        </span>
+        <span className="font-mono text-[10px] text-stone-400">v1.0.0</span>
+      </div>
+    </div>
+  );
 
   // Loading state
   if (isLoading) {
@@ -101,32 +248,10 @@ export default function TeacherLayout({ children }: { children?: any }) {
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <Sidebar
-          brand={{
-            name: 'WaliKelas',
-            subtitle: 'Ruang Guru Console',
-            href: '/teacher',
-            logo: (
-              <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
-                WK
-              </div>
-            ),
-          }}
-          items={navItems}
-          footer={
-            <div className="space-y-2">
-              <a href="/teacher/sessions">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="w-full justify-start text-xs font-semibold"
-                  leftIcon={<Plus className="w-4 h-4" />}
-                >
-                  Mulai Sesi Baru
-                </Button>
-              </a>
-              <p className="text-[10px] text-slate-500 text-center">WaliKelas Teaching Tools V1</p>
-            </div>
-          }
+          brand={brandConfig}
+          sections={navSections}
+          renderLink={renderSidebarLink}
+          footer={sidebarFooter(false)}
         />
       </div>
 
@@ -136,35 +261,14 @@ export default function TeacherLayout({ children }: { children?: any }) {
         onOpenChange={setMobileMenuOpen}
         title="Menu Ruang Guru"
         description="Navigasi menu utama Ruang Guru WaliKelas"
+        variant="warm"
       >
         <Sidebar
-          className="w-full h-full border-none static bg-slate-900"
-          brand={{
-            name: 'WaliKelas',
-            subtitle: 'Ruang Guru Console',
-            href: '/teacher',
-            logo: (
-              <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
-                WK
-              </div>
-            ),
-          }}
-          items={navItems}
-          footer={
-            <div className="space-y-2">
-              <a href="/teacher/sessions" onClick={() => setMobileMenuOpen(false)}>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="w-full justify-start text-xs font-semibold min-h-[44px]"
-                  leftIcon={<Plus className="w-4 h-4" />}
-                >
-                  Mulai Sesi Baru
-                </Button>
-              </a>
-              <p className="text-[10px] text-slate-500 text-center">WaliKelas Teaching Tools V1</p>
-            </div>
-          }
+          className="w-full h-full border-none static bg-card"
+          brand={brandConfig}
+          sections={navSections}
+          renderLink={renderSidebarLink}
+          footer={sidebarFooter(true)}
         />
       </MobileDrawer>
 
@@ -176,7 +280,7 @@ export default function TeacherLayout({ children }: { children?: any }) {
           actions={
             <div className="flex items-center gap-2.5">
               {/* Active Classroom Selector Dropdown */}
-              <div className="relative">
+              <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setClassDropdownOpen(!classDropdownOpen)}
@@ -221,20 +325,37 @@ export default function TeacherLayout({ children }: { children?: any }) {
               </div>
 
               <a
-                href="/projector/demo"
+                href="/projector"
                 target="_blank"
                 rel="noreferrer"
                 className="hidden sm:inline-flex"
+                title="Buka portal layar proyektor kelas"
               >
-                <Button variant="outline" size="sm" leftIcon={<Tv className="w-4 h-4" />}>
+                <Button variant="outline" size="sm" leftIcon={<Tv className="w-4 h-4 text-amber-600" />}>
                   Mode Proyektor
                 </Button>
               </a>
-              <a href="/teacher/sessions">
-                <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+              {activeSession ? (
+                <Link href={`/teacher/sessions/${activeSession.id}`}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs border-transparent"
+                    leftIcon={<Radio className="w-4 h-4 animate-pulse" />}
+                  >
+                    Konsol Sesi ({activeSession.joinCode})
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<Plus className="w-4 h-4" />}
+                  onClick={() => openCreateModal()}
+                >
                   Sesi Baru
                 </Button>
-              </a>
+              )}
             </div>
           }
           userMenu={
@@ -251,7 +372,7 @@ export default function TeacherLayout({ children }: { children?: any }) {
                 },
                 {
                   label: 'Mode Proyektor Layar',
-                  href: '/projector/demo',
+                  href: '/projector',
                   icon: <Tv className="w-4 h-4" />,
                 },
               ]}
@@ -264,7 +385,15 @@ export default function TeacherLayout({ children }: { children?: any }) {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <MobileNavigation items={navItems} />
+      <MobileNavigation items={flatNavItems} />
     </div>
+  );
+}
+
+export default function TeacherLayout({ children }: { children?: React.ReactNode }) {
+  return (
+    <SessionModalProvider>
+      <TeacherLayoutContent>{children}</TeacherLayoutContent>
+    </SessionModalProvider>
   );
 }

@@ -1,9 +1,17 @@
-'use client';
-
+import type { Metadata } from 'next';
 import React from 'react';
 import Link from 'next/link';
 import { HelpCircle, Play, ShieldCheck, ArrowRight, EyeOff, Clock, Tv } from 'lucide-react';
-import { Button, Badge, PageHeaderSection } from '@walikelas/ui';
+import { Button, PageHeaderSection } from '@walikelas/ui';
+
+export const metadata: Metadata = {
+  title: 'Kotak Pertanyaan Siswa (Question Box / Ask Teacher)',
+  description:
+    'Kanal tanya-jawab interaktif realtime yang memungkinkan murid mengajukan pertanyaan secara nyaman (bisa anonim) dan guru menyorot ke layar proyektor.',
+  alternates: {
+    canonical: '/tools/question-box',
+  },
+};
 
 export default function QuestionBoxToolPage(): React.JSX.Element {
   return (
@@ -18,32 +26,34 @@ export default function QuestionBoxToolPage(): React.JSX.Element {
       />
 
       {/* Hero Showcase Card */}
-      <div className="bg-gradient-to-br from-amber-900 via-orange-950 to-slate-950 rounded-3xl p-8 sm:p-10 text-white shadow-2xl space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/30 border border-amber-400/30 flex items-center justify-center text-amber-300">
-            <HelpCircle className="w-7 h-7" />
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#e8e4dc] p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex items-start sm:items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-200/80 flex items-center justify-center text-sky-600 shrink-0 shadow-2xs">
+            <HelpCircle className="w-6 h-6" />
           </div>
-          <div>
-            <Badge variant="default">Aktivitas Interaktif Realtime</Badge>
-            <h1 className="text-2xl sm:text-3xl font-black mt-1">
-              Kotak Pertanyaan / Ask Teacher V1
+          <div className="space-y-1">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100/70 text-sky-900 border border-sky-200/60">
+              Aktivitas Interaktif Kelas
+            </span>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-stone-900 tracking-tight">
+              Kotak Pertanyaan / Ask Teacher
             </h1>
           </div>
         </div>
 
-        <p className="text-amber-200 text-base sm:text-lg max-w-2xl leading-relaxed">
+        <p className="text-stone-600 text-sm sm:text-base max-w-2xl leading-relaxed">
           Beri kesempatan bagi setiap murid—termasuk yang pemalu—untuk bertanya langsung dari gawai
           mereka tanpa ragu. Guru memoderasi pertanyaan yang masuk, menandai yang telah selesai, dan
           menyorot pertanyaan pilihan ke layar utama kelas.
         </p>
 
-        <div className="flex flex-wrap gap-4 pt-2">
+        <div className="flex flex-wrap gap-3 pt-2">
           <Link href="/teacher/sessions">
             <Button
               variant="primary"
-              size="lg"
-              leftIcon={<Play className="w-5 h-5 fill-current" />}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg"
+              size="md"
+              leftIcon={<Play className="w-4 h-4 fill-current" />}
+              className="bg-stone-900 hover:bg-stone-800 text-white font-bold shadow-xs min-h-[42px]"
             >
               Mulai di Sesi Kelas (Guru)
             </Button>
@@ -51,59 +61,59 @@ export default function QuestionBoxToolPage(): React.JSX.Element {
           <Link href="/join">
             <Button
               variant="secondary"
-              size="lg"
-              rightIcon={<ArrowRight className="w-5 h-5" />}
-              className="font-bold border-amber-700 bg-amber-900/50 text-white hover:bg-amber-800"
+              size="md"
+              rightIcon={<ArrowRight className="w-4 h-4" />}
+              className="font-bold border-[#e8e4dc] hover:bg-stone-100 hover:text-stone-900 text-stone-700 min-h-[42px]"
             >
-              Gabung sebagai Murid
+              Gabung Sesi sebagai Murid
             </Button>
           </Link>
         </div>
       </div>
 
       {/* Feature Highlights Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-            <EyeOff className="w-5 h-5" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+        <div className="bg-white border border-[#e8e4dc] rounded-2xl p-5 shadow-xs space-y-2.5 hover:border-sky-300/70 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 border border-sky-200/60 flex items-center justify-center shadow-2xs">
+            <EyeOff className="w-4 h-4" />
           </div>
-          <h3 className="text-base font-bold text-foreground">Privasi Aman & Opsi Anonim</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 className="text-sm sm:text-base font-bold text-stone-900">Privasi Aman & Opsi Anonim</h3>
+          <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
             Pertanyaan yang baru diajukan langsung dikirim ke antrean guru dan tidak dapat dibaca
             oleh sesama murid, dengan opsi pengiriman nama anonim.
           </p>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <Tv className="w-5 h-5" />
+        <div className="bg-white border border-[#e8e4dc] rounded-2xl p-5 shadow-xs space-y-2.5 hover:border-blue-300/70 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/60 flex items-center justify-center shadow-2xs">
+            <Tv className="w-4 h-4" />
           </div>
-          <h3 className="text-base font-bold text-foreground">Sorot ke Layar Proyektor</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 className="text-sm sm:text-base font-bold text-stone-900">Sorot ke Layar Proyektor</h3>
+          <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
             Guru dapat menyorot satu pertanyaan pilihan untuk dibahas bersama di depan kelas dengan
             tipografi besar dan kontras tinggi.
           </p>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <ShieldCheck className="w-5 h-5" />
+        <div className="bg-white border border-[#e8e4dc] rounded-2xl p-5 shadow-xs space-y-2.5 hover:border-emerald-300/70 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shadow-2xs">
+            <ShieldCheck className="w-4 h-4" />
           </div>
-          <h3 className="text-base font-bold text-foreground">Anti-Spam & Batas Otomatis</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 className="text-sm sm:text-base font-bold text-stone-900">Anti-Spam & Batas Otomatis</h3>
+          <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
             Dilengkapi jeda pengiriman (cooldown 5 detik), batas maksimal 5 pertanyaan aktif per
             murid, dan pencegahan duplikasi pertanyaan.
           </p>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-            <Clock className="w-5 h-5" />
+        <div className="bg-white border border-[#e8e4dc] rounded-2xl p-5 shadow-xs space-y-2.5 hover:border-purple-300/70 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/60 flex items-center justify-center shadow-2xs">
+            <Clock className="w-4 h-4" />
           </div>
-          <h3 className="text-base font-bold text-foreground">
+          <h3 className="text-sm sm:text-base font-bold text-stone-900">
             Sinkronisasi Realtime & Pemulihan Reconnect
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
             Saat koneksi terputus dan terhubung kembali, snapshot otomatis memulihkan daftar
             pertanyaan guru dan status pertanyaan milik murid.
           </p>

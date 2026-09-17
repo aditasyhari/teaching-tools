@@ -27,8 +27,8 @@ describe('HomePage', () => {
       }),
     ).toBeDefined();
 
-    expect(screen.getByText('WaliKelas')).toBeDefined();
-    expect(screen.getByText('Teaching Tools')).toBeDefined();
+    expect(screen.getAllByText('WaliKelas').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Teaching Tools').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders student session join card and input', () => {

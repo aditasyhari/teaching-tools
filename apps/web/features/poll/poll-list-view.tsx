@@ -25,8 +25,6 @@ export function PollListView(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
-
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<PollSummary | null>(null);
 
   const loadPolls = async () => {
@@ -48,15 +46,19 @@ export function PollListView(): React.JSX.Element {
 
   const handleDelete = async () => {
     if (!showDeleteModal) return;
-    setDeletingId(showDeleteModal.id);
+    const target = showDeleteModal;
+    const previous = [...polls];
+
+    // Optimistic 0ms close & removal
+    setShowDeleteModal(null);
+    setPolls((prev) => prev.filter((p) => p.id !== target.id));
+
     try {
-      await deletePoll(apiClient, showDeleteModal.id);
-      setPolls((prev) => prev.filter((p) => p.id !== showDeleteModal.id));
-      setShowDeleteModal(null);
+      await deletePoll(apiClient, target.id);
     } catch (err: any) {
+      // Rollback
+      setPolls(previous);
       setError(err.message || 'Gagal menghapus polling');
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -222,10 +224,9 @@ export function PollListView(): React.JSX.Element {
             </div>
             <DialogFooter className="gap-2 sm:gap-2 pt-2">
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={() => setShowDeleteModal(null)}
-                disabled={deletingId !== null}
               >
                 Batal
               </Button>
@@ -233,9 +234,8 @@ export function PollListView(): React.JSX.Element {
                 variant="danger"
                 size="sm"
                 onClick={handleDelete}
-                disabled={deletingId !== null}
               >
-                {deletingId !== null ? 'Menghapus...' : 'Hapus Polling'}
+                Hapus Polling
               </Button>
             </DialogFooter>
           </DialogContent>

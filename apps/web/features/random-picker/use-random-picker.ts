@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 export interface UseRandomPickerOptions {
   initialRawInput?: string;
@@ -24,7 +24,7 @@ export function useRandomPicker({
   const [allowRepeat, setAllowRepeat] = useState(allowImmediateRepeat);
   const [isPicking, setIsPicking] = useState(false);
 
-  const items = parseItems(rawInput);
+  const items = useMemo(() => parseItems(rawInput), [rawInput]);
 
   const pick = useCallback((): string | null => {
     if (items.length === 0) {

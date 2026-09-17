@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
   Input,
   Textarea,
   Card,
@@ -53,6 +54,8 @@ export function TeacherNotesView(): React.JSX.Element {
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<TeacherNote | null>(null);
+  const [noteToDelete, setNoteToDelete] = useState<TeacherNote | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form State
   const [formTitle, setFormTitle] = useState('');
@@ -123,9 +126,20 @@ export function TeacherNotesView(): React.JSX.Element {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus catatan ini?')) {
-      await deleteNote(id);
+  const handleDeleteClick = (note: TeacherNote) => {
+    setNoteToDelete(note);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!noteToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteNote(noteToDelete.id);
+      setNoteToDelete(null);
+    } catch {
+      // Handled by hook error state
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -320,7 +334,7 @@ export function TeacherNotesView(): React.JSX.Element {
 
                       <button
                         type="button"
-                        onClick={() => handleDelete(note.id)}
+                        onClick={() => handleDeleteClick(note)}
                         aria-label="Hapus catatan"
                         className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
                       >
@@ -480,6 +494,36 @@ export function TeacherNotesView(): React.JSX.Element {
               </div>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Note Confirmation Modal */}
+      <Dialog open={Boolean(noteToDelete)} onOpenChange={(open) => !open && setNoteToDelete(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hapus Catatan Guru</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin menghapus catatan &ldquo;{noteToDelete?.title}&rdquo;? Tindakan ini tidak dapat dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2 pt-2">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => setNoteToDelete(null)}
+              disabled={isDeleting}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="danger"
+              size="md"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Menghapus...' : 'Hapus Catatan'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </main>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Users,
   Copy,
@@ -12,11 +12,13 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
+  GraduationCap,
 } from 'lucide-react';
 import { Button, Badge, Card, Input, Textarea } from '@walikelas/ui';
 import { motion } from 'motion/react';
 import { staggerContainer, slideUp } from '../../lib/motion';
 import { useGroupMaker } from './use-group-maker';
+import { useOptionalAuth } from '../../lib/auth-context';
 
 const SAMPLE_STUDENTS = [
   'Ahmad Dahlan',
@@ -45,6 +47,16 @@ export function GroupMakerView(): React.JSX.Element {
   const [copied, setCopied] = useState(false);
   const [showRoster, setShowRoster] = useState(true);
   const [announcement, setAnnouncement] = useState('');
+
+  const auth = useOptionalAuth();
+  const activeClassroom = auth?.activeClassroom;
+  const activeStudents = useMemo(() => {
+    if (!activeClassroom?.members) return [];
+    return activeClassroom.members
+      .filter((m) => m.status === 'ACTIVE')
+      .map((m) => m.displayName.trim())
+      .filter(Boolean);
+  }, [activeClassroom]);
 
   const {
     rawInput,
@@ -231,14 +243,39 @@ export function GroupMakerView(): React.JSX.Element {
             </div>
 
             {showRoster && (
-              <Textarea
-                id="names-textarea"
-                rows={7}
-                value={rawInput}
-                onChange={(e) => setRawInput(e.target.value)}
-                placeholder="Tempel nama siswa di sini...&#10;1 nama per baris"
-                className="font-medium font-sans text-xs leading-relaxed resize-y border-[#e8e4dc] focus-visible:ring-amber-500 text-stone-900 bg-[#fdfcfb]"
-              />
+              <div className="space-y-3">
+                {activeClassroom && activeStudents.length > 0 && (
+                  <div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/70 text-xs">
+                    <div className="flex items-center gap-1.5 text-stone-800">
+                      <GraduationCap className="w-3.5 h-3.5 text-amber-600 shrink-0" aria-hidden="true" />
+                      <span className="truncate font-medium">
+                        Kelas <strong>{activeClassroom.name}</strong> ({activeStudents.length} siswa)
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="bg-white hover:bg-amber-100 text-stone-900 border-amber-300 font-bold text-xs h-7 w-full shadow-xs"
+                      onClick={() => {
+                        setRawInput(activeStudents.join('\n'));
+                        setAnnouncement(`Daftar siswa dari kelas ${activeClassroom.name} berhasil dimuat.`);
+                      }}
+                    >
+                      Muat Siswa Kelas Ini
+                    </Button>
+                  </div>
+                )}
+
+                <Textarea
+                  id="names-textarea"
+                  rows={7}
+                  value={rawInput}
+                  onChange={(e) => setRawInput(e.target.value)}
+                  placeholder="Tempel nama siswa di sini...&#10;1 nama per baris"
+                  className="font-medium font-sans text-xs leading-relaxed resize-y border-[#e8e4dc] focus-visible:ring-amber-500 text-stone-900 bg-[#fdfcfb]"
+                />
+              </div>
             )}
           </div>
 
@@ -343,7 +380,7 @@ export function GroupMakerView(): React.JSX.Element {
               </motion.div>
             </>
           ) : (
-            <div className="bg-white rounded-3xl border-2 border-dashed border-[#e8e4dc] p-12 text-center flex flex-col items-center justify-center min-h-[360px] text-stone-400 space-y-3 select-none">
+            <div className="bg-white rounded-3xl border-2 border-dashed border-[#e8e4dc] p-12 text-center flex flex-col items-center justify-center min-h-[360px] text-stone-400 gap-3.5 select-none">
               <div className="w-14 h-14 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-400">
                 <Users className="w-7 h-7" aria-hidden="true" />
               </div>

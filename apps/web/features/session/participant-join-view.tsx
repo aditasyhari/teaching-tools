@@ -127,7 +127,11 @@ export function ParticipantJoinView({
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
-            if (parsed.code && parsed.code.toUpperCase() !== code.trim().toUpperCase()) {
+            if (
+              (parsed.code && parsed.code.toUpperCase() !== code.trim().toUpperCase()) ||
+              (parsed.displayName &&
+                parsed.displayName.trim().toLowerCase() !== displayName.trim().toLowerCase())
+            ) {
               sessionStorage.removeItem('wk_participant_id');
               sessionStorage.removeItem('wk_reconnect_token');
             }
@@ -317,8 +321,8 @@ export function ParticipantJoinView({
       <main id="main-content" tabIndex={-1} className="min-h-[80vh] flex flex-col justify-center items-center px-4 py-8 focus:outline-none">
         <div className="w-full max-w-md bg-white border border-[#e8e4dc] rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-stone-950 flex items-center justify-center mx-auto shadow-xs ring-4 ring-amber-100">
-              <Sparkles className="w-6 h-6" />
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-white border border-[#e8e4dc] p-2.5 flex items-center justify-center shadow-xs">
+              <img src="/logo.png" alt="WaliKelas" className="w-11 h-11 object-contain" />
             </div>
             <h1 className="text-2xl font-black text-stone-900 tracking-tight">
               Gabung Sesi Kelas

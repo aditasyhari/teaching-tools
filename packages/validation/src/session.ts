@@ -13,6 +13,26 @@ export const joinCodeSchema = z
       .regex(/^[A-Z0-9]+$/, 'Kode sesi hanya boleh berisi huruf dan angka'),
   );
 
+export const RESERVED_DISPLAY_NAMES = [
+  'guru',
+  'admin',
+  'administrator',
+  'operator',
+  'system',
+  'sistem',
+  'walikelas',
+  'wali kelas',
+  'host',
+  'moderator',
+] as const;
+
+const RESERVED_NAME_REGEX =
+  /\b(guru|admin|administrator|operator|system|sistem|walikelas|wali\s+kelas|host|moderator)\b/i;
+
+export const isReservedDisplayName = (name: string): boolean => {
+  return RESERVED_NAME_REGEX.test(name.trim());
+};
+
 export const joinSessionSchema = z.object({
   code: joinCodeSchema,
   displayName: z
@@ -22,9 +42,14 @@ export const joinSessionSchema = z.object({
     .max(
       MAX_PARTICIPANT_NAME_LENGTH,
       `Nama tampilan maksimal ${MAX_PARTICIPANT_NAME_LENGTH} karakter`,
+    )
+    .refine(
+      (name) => !isReservedDisplayName(name),
+      'Nama tersebut dicadangkan untuk peran guru atau sistem',
     ),
   participantId: z.string().optional(),
   reconnectToken: z.string().optional(),
+  isProjector: z.boolean().optional(),
 });
 
 export type JoinSessionInput = z.infer<typeof joinSessionSchema>;

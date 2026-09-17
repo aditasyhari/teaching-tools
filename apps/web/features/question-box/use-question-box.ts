@@ -22,9 +22,15 @@ interface UseQuestionBoxOptions {
   socket: Socket | null;
   sessionId?: string;
   isTeacher?: boolean;
+  onQuestionCreated?: (question: QuestionBoxItem) => void;
 }
 
-export function useQuestionBox({ socket, sessionId, isTeacher = false }: UseQuestionBoxOptions) {
+export function useQuestionBox({
+  socket,
+  sessionId,
+  isTeacher = false,
+  onQuestionCreated: onQuestionCreatedCallback,
+}: UseQuestionBoxOptions) {
   // Teacher state
   const [questions, setQuestions] = useState<QuestionBoxItem[]>([]);
   const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(null);
@@ -47,6 +53,11 @@ export function useQuestionBox({ socket, sessionId, isTeacher = false }: UseQues
   useEffect(() => {
     sessionIdRef.current = sessionId;
   }, [sessionId]);
+
+  const onQuestionCreatedRef = useRef(onQuestionCreatedCallback);
+  useEffect(() => {
+    onQuestionCreatedRef.current = onQuestionCreatedCallback;
+  }, [onQuestionCreatedCallback]);
 
   useEffect(() => {
     if (!socket) return;
@@ -94,6 +105,7 @@ export function useQuestionBox({ socket, sessionId, isTeacher = false }: UseQues
         if (prev.some((q) => q.id === payload.question.id)) return prev;
         return [payload.question, ...prev];
       });
+      onQuestionCreatedRef.current?.(payload.question);
     };
 
     // Teacher: count update
@@ -241,10 +253,26 @@ export function useQuestionBox({ socket, sessionId, isTeacher = false }: UseQues
     [socket],
   );
 
-  // Actions for Teacher
+  // Actions for Teacher (with optimistic instant feedback)
   const highlightQuestion = useCallback(
     (questionId: string) => {
       if (!socket || !sessionIdRef.current) return;
+      // Optimistic update
+      setHighlightedQuestionId(questionId);
+      setQuestions((prev) => {
+        const target = prev.find((q) => q.id === questionId);
+        if (target) {
+          setHighlightedQuestion({
+            id: target.id,
+            content: target.content,
+            authorName: target.isAnonymous ? 'Anonim' : target.authorName,
+            isAnonymous: target.isAnonymous,
+            createdAt: target.createdAt,
+          });
+        }
+        return prev;
+      });
+
       socket.emit('question:highlight', {
         sessionId: sessionIdRef.current,
         questionId,
@@ -256,6 +284,10 @@ export function useQuestionBox({ socket, sessionId, isTeacher = false }: UseQues
   const unhighlightQuestion = useCallback(
     (questionId: string) => {
       if (!socket || !sessionIdRef.current) return;
+      // Optimistic update
+      setHighlightedQuestionId(null);
+      setHighlightedQuestion(null);
+
       socket.emit('question:unhighlight', {
         sessionId: sessionIdRef.current,
         questionId,
@@ -267,6 +299,17 @@ export function useQuestionBox({ socket, sessionId, isTeacher = false }: UseQues
   const answerQuestion = useCallback(
     (questionId: string) => {
       if (!socket || !sessionIdRef.current) return;
+      // Optimistic update
+      setHighlightedQuestion((curr) => (curr?.id === questionId ? null : curr));
+      setHighlightedQuestionId((curr) => (curr === questionId ? null : curr));
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === questionId ? { ...q, status: 'ANSWERED', answeredAt: Date.now() } : q,
+        ),
+      );
+      setPendingCount((prev) => Math.max(0, prev - 1));
+      setAnsweredCount((prev) => prev + 1);
+
       socket.emit('question:answer', {
         sessionId: sessionIdRef.current,
         questionId,
@@ -278,6 +321,16 @@ export function useQuestionBox({ socket, sessionId, isTeacher = false }: UseQues
   const dismissQuestion = useCallback(
     (questionId: string) => {
       if (!socket || !sessionIdRef.current) return;
+      // Optimistic update
+      setHighlightedQuestion((curr) => (curr?.id === questionId ? null : curr));
+      setHighlightedQuestionId((curr) => (curr === questionId ? null : curr));
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === questionId ? { ...q, status: 'DISMISSED', dismissedAt: Date.now() } : q,
+        ),
+      );
+      setPendingCount((prev) => Math.max(0, prev - 1));
+
       socket.emit('question:dismiss', {
         sessionId: sessionIdRef.current,
         questionId,

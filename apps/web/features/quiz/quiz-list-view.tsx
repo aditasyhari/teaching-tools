@@ -25,8 +25,6 @@ export function QuizListView(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
-
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<QuizSummary | null>(null);
 
   const loadQuizzes = async () => {
@@ -48,15 +46,19 @@ export function QuizListView(): React.JSX.Element {
 
   const handleDelete = async () => {
     if (!showDeleteModal) return;
-    setDeletingId(showDeleteModal.id);
+    const target = showDeleteModal;
+    const previous = [...quizzes];
+
+    // Optimistic 0ms close & removal
+    setShowDeleteModal(null);
+    setQuizzes((prev) => prev.filter((q) => q.id !== target.id));
+
     try {
-      await deleteQuiz(apiClient, showDeleteModal.id);
-      setQuizzes((prev) => prev.filter((q) => q.id !== showDeleteModal.id));
-      setShowDeleteModal(null);
+      await deleteQuiz(apiClient, target.id);
     } catch (err: any) {
+      // Rollback
+      setQuizzes(previous);
       setError(err.message || 'Gagal menghapus kuis');
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -172,7 +174,7 @@ export function QuizListView(): React.JSX.Element {
 
               <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <Link
-                  href="/teacher/sessions"
+                  href={`/teacher/sessions?startQuiz=${quiz.id}`}
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
@@ -231,12 +233,11 @@ export function QuizListView(): React.JSX.Element {
               <Button
                 variant="secondary"
                 onClick={() => setShowDeleteModal(null)}
-                disabled={Boolean(deletingId)}
               >
                 Batal
               </Button>
-              <Button variant="danger" onClick={handleDelete} disabled={Boolean(deletingId)}>
-                {deletingId ? 'Menghapus...' : 'Ya, Hapus Kuis'}
+              <Button variant="danger" onClick={handleDelete}>
+                Ya, Hapus Kuis
               </Button>
             </DialogFooter>
           </DialogContent>

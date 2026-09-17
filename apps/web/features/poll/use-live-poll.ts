@@ -180,6 +180,9 @@ export function useLivePoll({ socket, sessionId, isTeacher = false }: UseLivePol
 
   const closePoll = useCallback(() => {
     if (!socket || !sessionIdRef.current) return;
+    // Optimistic 0ms update
+    setIsPollClosed(true);
+    setIsPollActive(false);
     socket.emit('poll:close', {
       sessionId: sessionIdRef.current,
     });

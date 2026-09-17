@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Clock,
   Shuffle,
@@ -57,6 +58,7 @@ const featuredIcons: Record<string, React.ReactNode> = {
 type ActiveFilter = 'ALL' | TeacherToolCategory;
 
 export default function ToolsPage(): React.JSX.Element {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ActiveFilter>('ALL');
 
@@ -90,11 +92,21 @@ export default function ToolsPage(): React.JSX.Element {
     }).length;
   }, [selectedCategory, searchQuery]);
 
+  const handleHoverTool = (tool: ToolMetadata) => {
+    const destination =
+      tool.status === 'AVAILABLE' && tool.route
+        ? tool.route
+        : `/teacher/tools?launch=${tool.id}`;
+    try {
+      router.prefetch(destination);
+    } catch {}
+  };
+
   const handleSelectTool = (tool: ToolMetadata) => {
     if (tool.status === 'AVAILABLE' && tool.route) {
-      window.location.href = tool.route;
+      router.push(tool.route);
     } else {
-      window.location.href = `/teacher/tools?launch=${tool.id}`;
+      router.push(`/teacher/tools?launch=${tool.id}`);
     }
   };
 
@@ -186,6 +198,7 @@ export default function ToolsPage(): React.JSX.Element {
                   tool={tool}
                   icon={featuredIcons[tool.id]}
                   onAction={handleSelectTool}
+                  onHover={handleHoverTool}
                 />
               ))}
             </div>
@@ -199,7 +212,7 @@ export default function ToolsPage(): React.JSX.Element {
             <div
               role="tablist"
               aria-label="Kategori Perkakas"
-              className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none snap-x"
+              className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar scrollbar-none snap-x"
             >
               {TEACHER_CATEGORIES.map((cat) => {
                 const isSelected = selectedCategory === cat.id;
@@ -277,6 +290,7 @@ export default function ToolsPage(): React.JSX.Element {
                 searchQuery={searchQuery}
                 toolIcons={toolIcons}
                 onSelectTool={handleSelectTool}
+                onHoverTool={handleHoverTool}
                 onResetFilters={handleResetFilters}
               />
             </motion.div>

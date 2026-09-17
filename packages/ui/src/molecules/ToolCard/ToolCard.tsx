@@ -7,6 +7,7 @@ import type { ToolMetadata } from '@walikelas/types';
 export interface ToolCardProps {
   tool: ToolMetadata;
   onAction?: (tool: ToolMetadata) => void;
+  onHover?: (tool: ToolMetadata) => void;
   actionLabel?: string;
   icon?: React.ReactNode;
   className?: string;
@@ -15,6 +16,7 @@ export interface ToolCardProps {
 export function ToolCard({
   tool,
   onAction,
+  onHover,
   actionLabel,
   icon,
   className,
@@ -24,6 +26,8 @@ export function ToolCard({
 
   return (
     <div
+      onMouseEnter={() => onHover?.(tool)}
+      onTouchStart={() => onHover?.(tool)}
       className={cn(
         'group p-5 bg-white rounded-2xl border border-stone-200/80 transition-all duration-200 ease-out',
         'hover:border-amber-400 hover:shadow-xs hover:-translate-y-0.5 active:scale-[0.99] flex flex-col justify-between gap-4',

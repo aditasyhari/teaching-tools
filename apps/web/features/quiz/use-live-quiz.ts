@@ -237,6 +237,8 @@ export function useLiveQuiz({ socket, sessionId, isTeacher = false }: UseLiveQui
 
   const endQuestion = useCallback(() => {
     if (!socket || !sessionIdRef.current) return;
+    // Optimistic 0ms update
+    setIsQuestionEnded(true);
     socket.emit('quiz:end-question', {
       sessionId: sessionIdRef.current,
     });
@@ -251,6 +253,10 @@ export function useLiveQuiz({ socket, sessionId, isTeacher = false }: UseLiveQui
 
   const finishQuiz = useCallback(() => {
     if (!socket || !sessionIdRef.current) return;
+    // Optimistic 0ms update
+    setIsQuizActive(false);
+    setIsQuestionEnded(false);
+    setIsQuizFinished(true);
     socket.emit('quiz:finish', {
       sessionId: sessionIdRef.current,
     });

@@ -83,8 +83,22 @@ export function useTeacherNotes() {
   }, []);
 
   const deleteNote = useCallback(async (id: string): Promise<void> => {
-    await apiDeleteNote(apiClient, id);
-    setNotes((prev) => prev.filter((n) => n.id !== id));
+    let deletedNote: TeacherNote | undefined;
+    // Optimistic 0ms update
+    setNotes((prev) => {
+      deletedNote = prev.find((n) => n.id === id);
+      return prev.filter((n) => n.id !== id);
+    });
+
+    try {
+      await apiDeleteNote(apiClient, id);
+    } catch (err) {
+      // Rollback on failure
+      if (deletedNote) {
+        setNotes((prev) => [deletedNote!, ...prev]);
+      }
+      throw err;
+    }
   }, []);
 
   return {

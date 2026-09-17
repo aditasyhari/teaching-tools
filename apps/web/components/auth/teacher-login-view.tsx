@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Sparkles, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { BrandLogo } from '../common/brand-logo';
 
 export function GoogleIcon({ className = 'w-5 h-5' }: { className?: string }): React.JSX.Element {
   return (
@@ -38,15 +39,9 @@ export function TeacherLoginView(): React.JSX.Element {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-stone-900 font-bold hover:opacity-85 transition-opacity"
+            className="flex items-center focus:outline-none"
           >
-            <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center text-stone-950 font-black text-sm shadow-2xs">
-              WK
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="font-extrabold text-sm tracking-tight leading-tight">WaliKelas</span>
-              <span className="text-[10px] text-stone-500 font-semibold leading-none">Teaching Tools</span>
-            </div>
+            <BrandLogo size="sm" />
           </Link>
 
           <Link
@@ -65,8 +60,8 @@ export function TeacherLoginView(): React.JSX.Element {
           {/* Card */}
           <div className="bg-white rounded-2xl border border-[#e8e4dc] shadow-xs p-6 sm:p-8 space-y-6 text-center">
             {/* Brand Emblem */}
-            <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-800 shadow-2xs">
-              <Sparkles className="w-6 h-6 text-amber-700" />
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-white border border-[#e8e4dc] p-2.5 flex items-center justify-center shadow-xs">
+              <img src="/logo.png" alt="WaliKelas" className="w-11 h-11 object-contain" />
             </div>
 
             {/* Header Text */}

@@ -7,6 +7,9 @@ const nextConfig = {
     '@walikelas/validation',
     '@walikelas/api-client',
   ],
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'motion', '@walikelas/ui'],
+  },
 };
 
 export default nextConfig;

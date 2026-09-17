@@ -8,18 +8,27 @@ import {
   Maximize2,
   Minimize2,
   CheckCircle2,
-  Sparkles,
+  Radio,
+  Mic,
 } from 'lucide-react';
 import { Button } from '@walikelas/ui';
 import type {
-  ParticipantSessionSnapshot,
+  ProjectorSessionSnapshot,
   SharedQuestionItem,
   ParticipantQuestionData,
   TeacherLivePollSnapshot,
+  BrainstormActivity,
+  BrainstormIdea,
+  TeacherBrainstormSnapshot,
+  ExitTicketActivity,
+  TeacherExitTicketSnapshot,
+  TeacherRaiseHandSnapshot,
 } from '@walikelas/types';
 import { useSessionSocket } from './use-session-socket';
 import { useClassroomTimer, formatTime } from '../classroom-timer';
 import { ProjectorFeaturedQuestion } from '../question-box';
+import { ProjectorBrainstormView } from '../brainstorm';
+import { ProjectorExitTicketView } from '../exit-ticket';
 
 interface ProjectorSessionViewProps {
   joinCode?: string;
@@ -31,7 +40,9 @@ export function ProjectorSessionView({
   isDemo = false,
 }: ProjectorSessionViewProps): React.JSX.Element {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [demoTab, setDemoTab] = useState<'WAITING' | 'QUESTION' | 'QUIZ' | 'POLL'>('WAITING');
+  const [demoTab, setDemoTab] = useState<
+    'WAITING' | 'QUESTION' | 'QUIZ' | 'POLL' | 'BRAINSTORM' | 'EXIT_TICKET' | 'SPEAKER'
+  >('WAITING');
 
   // Fullscreen toggle handler
   const toggleFullscreen = () => {
@@ -58,11 +69,11 @@ export function ProjectorSessionView({
     socket,
   } = useSessionSocket({
     isTeacher: false,
+    isProjector: true,
     joinCode: isDemo ? undefined : joinCode,
-    displayName: 'Layar Proyektor',
   });
 
-  const snapshot = liveSnapshot as ParticipantSessionSnapshot | null;
+  const snapshot = liveSnapshot as ProjectorSessionSnapshot | null;
 
   // Realtime classroom timer
   const {
@@ -75,6 +86,7 @@ export function ProjectorSessionView({
   });
 
   // State listeners for active tools
+  // 1. Live Quiz
   const [quizState, setQuizState] = useState<{
     isActive: boolean;
     question: ParticipantQuestionData | null;
@@ -93,22 +105,69 @@ export function ProjectorSessionView({
     isEnded: false,
   });
 
+  // 2. Live Poll
   const [pollState, setPollState] = useState<TeacherLivePollSnapshot | null>(null);
+
+  // 3. Question Box (Featured Question)
   const [featuredQuestion, setFeaturedQuestion] = useState<SharedQuestionItem | null>(null);
+
+  // 4. Brainstorm Board
+  const [brainstormState, setBrainstormState] = useState<{
+    activity: BrainstormActivity | null;
+    ideas: BrainstormIdea[];
+    totalCount: number;
+  }>({
+    activity: null,
+    ideas: [],
+    totalCount: 0,
+  });
+
+  // 5. Exit Ticket
+  const [exitTicketState, setExitTicketState] = useState<{
+    activity: ExitTicketActivity | null;
+    responseCount: number;
+    totalExpected: number;
+    completionRate: number;
+  }>({
+    activity: null,
+    responseCount: 0,
+    totalExpected: 0,
+    completionRate: 0,
+  });
+
+  // 6. Raise Hand Speaking Spotlight
+  const [speakingStudent, setSpeakingStudent] = useState<{
+    displayName: string;
+    participantId?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!socket || isDemo) return;
 
-    // Quiz events
-    socket.on('quiz:started', (data: any) => {
+    // --- Quiz events ---
+    const onQuizState = (data: any) => {
+      if (data && data.status === 'RUNNING' && data.currentQuestion) {
+        setQuizState({
+          isActive: true,
+          question: data.currentQuestion,
+          questionNumber: (data.currentQuestionIndex ?? 0) + 1,
+          totalQuestions: data.totalQuestions || 1,
+          deadline: data.deadline,
+          answeredCount: data.answersCount || 0,
+          isEnded: false,
+        });
+      }
+    };
+
+    const onQuizStarted = (data: any) => {
       setQuizState((prev) => ({
         ...prev,
         isActive: true,
         totalQuestions: data.totalQuestions || 1,
       }));
-    });
+    };
 
-    socket.on('quiz:question-started', (data: any) => {
+    const onQuizQuestionStarted = (data: any) => {
       setQuizState((prev) => ({
         ...prev,
         isActive: true,
@@ -119,62 +178,266 @@ export function ProjectorSessionView({
         answeredCount: 0,
         isEnded: false,
       }));
-    });
+    };
 
-    socket.on('quiz:stats-update', (data: any) => {
+    const onQuizStatsUpdate = (data: any) => {
       setQuizState((prev) => ({
         ...prev,
         answeredCount: data.answeredCount || 0,
       }));
-    });
+    };
 
-    socket.on('quiz:question-ended', () => {
+    const onQuizQuestionEnded = () => {
       setQuizState((prev) => ({
         ...prev,
         isEnded: true,
       }));
-    });
+    };
 
-    socket.on('quiz:finished', () => {
+    const onQuizFinished = () => {
       setQuizState((prev) => ({
         ...prev,
         isActive: false,
       }));
-    });
+    };
 
-    // Poll events
-    socket.on('poll:state', (data: TeacherLivePollSnapshot) => {
+    // --- Poll events ---
+    const onPollState = (data: TeacherLivePollSnapshot) => {
       setPollState(data);
-    });
+    };
 
-    socket.on('poll:started', (data: any) => {
+    const onPollStarted = (data: any) => {
       setPollState(data.poll);
-    });
+    };
 
-    socket.on('poll:closed', () => {
+    const onPollClosed = () => {
       setPollState(null);
-    });
+    };
 
-    // Question Box events
-    socket.on('question:highlighted', (data: any) => {
+    // --- Question Box events ---
+    const onQuestionState = (data: any) => {
+      if (data && 'highlightedQuestion' in data) {
+        setFeaturedQuestion(data.highlightedQuestion || null);
+      }
+    };
+
+    const onQuestionHighlighted = (data: any) => {
       setFeaturedQuestion(data.question);
-    });
+    };
 
-    socket.on('question:dismissed', (data: any) => {
+    const onQuestionUnhighlighted = (data: any) => {
       setFeaturedQuestion((prev) => (prev?.id === data.questionId ? null : prev));
-    });
+    };
+
+    const onQuestionAnswered = (data: any) => {
+      setFeaturedQuestion((prev) => (prev?.id === data.questionId ? null : prev));
+    };
+
+    const onQuestionDismissed = (data: any) => {
+      setFeaturedQuestion((prev) => (prev?.id === data.questionId ? null : prev));
+    };
+
+    // --- Brainstorm Board events ---
+    const onBrainstormState = (data: TeacherBrainstormSnapshot) => {
+      if (data) {
+        setBrainstormState({
+          activity: data.activity || null,
+          ideas: data.ideas || [],
+          totalCount: data.totalCount || 0,
+        });
+      }
+    };
+
+    const onBrainstormOpened = (data: any) => {
+      setBrainstormState((prev) => ({
+        ...prev,
+        activity: prev.activity
+          ? { ...prev.activity, status: 'OPEN', openedAt: data.openedAt }
+          : null,
+      }));
+    };
+
+    const onBrainstormPaused = (data: any) => {
+      setBrainstormState((prev) => ({
+        ...prev,
+        activity: prev.activity
+          ? { ...prev.activity, status: 'PAUSED', pausedAt: data.pausedAt }
+          : null,
+      }));
+    };
+
+    const onBrainstormClosed = () => {
+      setBrainstormState((prev) => ({
+        ...prev,
+        activity: prev.activity ? { ...prev.activity, status: 'CLOSED' } : null,
+      }));
+    };
+
+    const onBrainstormIdeaCreated = (data: any) => {
+      if (data?.idea) {
+        setBrainstormState((prev) => {
+          if (prev.ideas.some((i) => i.id === data.idea.id)) return prev;
+          return {
+            ...prev,
+            ideas: [data.idea, ...prev.ideas],
+            totalCount: data.totalCount ?? prev.totalCount + 1,
+          };
+        });
+      }
+    };
+
+    const onBrainstormIdeaHidden = (data: any) => {
+      setBrainstormState((prev) => ({
+        ...prev,
+        ideas: prev.ideas.map((i) => (i.id === data.ideaId ? { ...i, status: 'HIDDEN' } : i)),
+        totalCount: data.totalCount ?? prev.totalCount,
+      }));
+    };
+
+    const onBrainstormIdeaRestored = (data: any) => {
+      setBrainstormState((prev) => ({
+        ...prev,
+        ideas: prev.ideas.map((i) => (i.id === data.idea?.id ? { ...i, status: 'VISIBLE' } : i)),
+        totalCount: data.totalCount ?? prev.totalCount,
+      }));
+    };
+
+    // --- Exit Ticket events ---
+    const onExitTicketState = (data: TeacherExitTicketSnapshot) => {
+      if (data) {
+        setExitTicketState({
+          activity: data.activity || null,
+          responseCount: data.responseCount || 0,
+          totalExpected: data.totalExpected || 0,
+          completionRate: data.completionRate || 0,
+        });
+      }
+    };
+
+    const onExitTicketOpened = (data: any) => {
+      setExitTicketState((prev) => ({
+        ...prev,
+        activity: prev.activity
+          ? { ...prev.activity, status: 'OPEN', openedAt: data.openedAt }
+          : null,
+      }));
+    };
+
+    const onExitTicketClosed = () => {
+      setExitTicketState((prev) => ({
+        ...prev,
+        activity: prev.activity ? { ...prev.activity, status: 'CLOSED' } : null,
+      }));
+    };
+
+    const onExitTicketResultsUpdated = (data: any) => {
+      setExitTicketState((prev) => ({
+        ...prev,
+        responseCount: data.responseCount ?? prev.responseCount,
+        completionRate: data.completionRate ?? prev.completionRate,
+      }));
+    };
+
+    // --- Raise Hand Speaking Spotlight events ---
+    const onHandState = (data: TeacherRaiseHandSnapshot) => {
+      if (data?.currentSpeaker) {
+        setSpeakingStudent({
+          displayName: data.currentSpeaker.displayName,
+          participantId: data.currentSpeaker.participantId,
+        });
+      } else {
+        setSpeakingStudent(null);
+      }
+    };
+
+    const onHandSpeaking = (data: any) => {
+      if (data?.displayName) {
+        setSpeakingStudent({
+          displayName: data.displayName,
+          participantId: data.participantId,
+        });
+      }
+    };
+
+    const onHandLowered = (data: any) => {
+      setSpeakingStudent((prev) => (prev?.participantId === data.participantId ? null : prev));
+    };
+
+    const onHandAllLowered = () => {
+      setSpeakingStudent(null);
+    };
+
+    // Register all listeners
+    socket.on('quiz:state', onQuizState);
+    socket.on('quiz:started', onQuizStarted);
+    socket.on('quiz:question-started', onQuizQuestionStarted);
+    socket.on('quiz:stats-update', onQuizStatsUpdate);
+    socket.on('quiz:question-ended', onQuizQuestionEnded);
+    socket.on('quiz:finished', onQuizFinished);
+
+    socket.on('poll:state', onPollState);
+    socket.on('poll:started', onPollStarted);
+    socket.on('poll:closed', onPollClosed);
+
+    socket.on('question:state', onQuestionState);
+    socket.on('question:highlighted', onQuestionHighlighted);
+    socket.on('question:unhighlighted', onQuestionUnhighlighted);
+    socket.on('question:answered', onQuestionAnswered);
+    socket.on('question:dismissed', onQuestionDismissed);
+
+    socket.on('brainstorm:state', onBrainstormState);
+    socket.on('brainstorm:opened', onBrainstormOpened);
+    socket.on('brainstorm:paused', onBrainstormPaused);
+    socket.on('brainstorm:closed', onBrainstormClosed);
+    socket.on('brainstorm:idea-created', onBrainstormIdeaCreated);
+    socket.on('brainstorm:idea-hidden', onBrainstormIdeaHidden);
+    socket.on('brainstorm:idea-restored', onBrainstormIdeaRestored);
+
+    socket.on('exit-ticket:state', onExitTicketState);
+    socket.on('exit-ticket:opened', onExitTicketOpened);
+    socket.on('exit-ticket:closed', onExitTicketClosed);
+    socket.on('exit-ticket:results-updated', onExitTicketResultsUpdated);
+
+    socket.on('hand:state', onHandState);
+    socket.on('hand:speaking', onHandSpeaking);
+    socket.on('hand:lowered', onHandLowered);
+    socket.on('hand:all-lowered', onHandAllLowered);
 
     return () => {
-      socket.off('quiz:started');
-      socket.off('quiz:question-started');
-      socket.off('quiz:stats-update');
-      socket.off('quiz:question-ended');
-      socket.off('quiz:finished');
-      socket.off('poll:state');
-      socket.off('poll:started');
-      socket.off('poll:closed');
-      socket.off('question:highlighted');
-      socket.off('question:dismissed');
+      socket.off('quiz:state', onQuizState);
+      socket.off('quiz:started', onQuizStarted);
+      socket.off('quiz:question-started', onQuizQuestionStarted);
+      socket.off('quiz:stats-update', onQuizStatsUpdate);
+      socket.off('quiz:question-ended', onQuizQuestionEnded);
+      socket.off('quiz:finished', onQuizFinished);
+
+      socket.off('poll:state', onPollState);
+      socket.off('poll:started', onPollStarted);
+      socket.off('poll:closed', onPollClosed);
+
+      socket.off('question:state', onQuestionState);
+      socket.off('question:highlighted', onQuestionHighlighted);
+      socket.off('question:unhighlighted', onQuestionUnhighlighted);
+      socket.off('question:answered', onQuestionAnswered);
+      socket.off('question:dismissed', onQuestionDismissed);
+
+      socket.off('brainstorm:state', onBrainstormState);
+      socket.off('brainstorm:opened', onBrainstormOpened);
+      socket.off('brainstorm:paused', onBrainstormPaused);
+      socket.off('brainstorm:closed', onBrainstormClosed);
+      socket.off('brainstorm:idea-created', onBrainstormIdeaCreated);
+      socket.off('brainstorm:idea-hidden', onBrainstormIdeaHidden);
+      socket.off('brainstorm:idea-restored', onBrainstormIdeaRestored);
+
+      socket.off('exit-ticket:state', onExitTicketState);
+      socket.off('exit-ticket:opened', onExitTicketOpened);
+      socket.off('exit-ticket:closed', onExitTicketClosed);
+      socket.off('exit-ticket:results-updated', onExitTicketResultsUpdated);
+
+      socket.off('hand:state', onHandState);
+      socket.off('hand:speaking', onHandSpeaking);
+      socket.off('hand:lowered', onHandLowered);
+      socket.off('hand:all-lowered', onHandAllLowered);
     };
   }, [socket, isDemo]);
 
@@ -187,9 +450,95 @@ export function ProjectorSessionView({
     createdAt: Date.now(),
   };
 
+  const demoBrainstormActivity: BrainstormActivity = {
+    id: 'demo-bs-1',
+    sessionId: 'demo-session',
+    prompt: 'Apa saja ide praktis untuk menghemat energi listrik di lingkungan sekolah kita?',
+    status: 'OPEN',
+    settings: {
+      isAnonymous: false,
+      ideasVisibleToParticipants: true,
+      submissionMode: 'MULTIPLE_PER_PARTICIPANT',
+      maxIdeasPerParticipant: 5,
+    },
+    createdAt: Date.now() - 60000,
+    openedAt: Date.now() - 50000,
+  };
+
+  const demoBrainstormIdeas: BrainstormIdea[] = [
+    {
+      id: 'idea-1',
+      sessionId: 'demo-session',
+      activityId: 'demo-bs-1',
+      participantId: 'p-1',
+      authorName: 'Ahmad Fauzi',
+      isAnonymous: false,
+      content: 'Matikan lampu dan proyektor saat jam istirahat atau kelas kosong.',
+      status: 'VISIBLE',
+      createdAt: Date.now() - 40000,
+    },
+    {
+      id: 'idea-2',
+      sessionId: 'demo-session',
+      activityId: 'demo-bs-1',
+      participantId: 'p-2',
+      authorName: 'Nadia Putri',
+      isAnonymous: false,
+      content: 'Buka ventilasi dan tirai jendela pada pagi hari untuk memaksimalkan cahaya alami.',
+      status: 'VISIBLE',
+      createdAt: Date.now() - 32000,
+    },
+    {
+      id: 'idea-3',
+      sessionId: 'demo-session',
+      activityId: 'demo-bs-1',
+      participantId: 'p-3',
+      authorName: 'Rian Hidayat',
+      isAnonymous: false,
+      content: 'Atur suhu AC kelas konsisten di 24°C agar kompresor tidak bekerja terlalu berat.',
+      status: 'VISIBLE',
+      createdAt: Date.now() - 20000,
+    },
+    {
+      id: 'idea-4',
+      sessionId: 'demo-session',
+      activityId: 'demo-bs-1',
+      participantId: 'p-4',
+      authorName: 'Anonim',
+      isAnonymous: true,
+      content: 'Tunjuk petugas piket energi harian dari siswa untuk cek saklar sebelum pulang.',
+      status: 'VISIBLE',
+      createdAt: Date.now() - 10000,
+    },
+  ];
+
+  const demoExitTicketActivity: ExitTicketActivity = {
+    id: 'demo-et-1',
+    sessionId: 'demo-session',
+    title: 'Refleksi Akhir Pembelajaran — Gaya & Gravitasi',
+    status: 'OPEN',
+    isAnonymous: false,
+    questions: [],
+    createdAt: Date.now() - 120000,
+    openedAt: Date.now() - 100000,
+  };
+
   const activeTitle = snapshot?.title || (isDemo ? 'Kelas IPA 7A — Gravitasi Bumi' : 'Sesi Kelas');
-  const activeCode = isDemo ? 'DEMO99' : (snapshot?.title ? joinCode : joinCode);
+  const activeCode = isDemo ? 'DEMO99' : (snapshot?.joinCode || joinCode);
   const participantCount = snapshot?.participantCount || (isDemo ? 32 : 0);
+
+  // Determine stage conditions
+  const isBrainstormActive =
+    brainstormState.activity &&
+    (brainstormState.activity.status === 'OPEN' || brainstormState.activity.status === 'PAUSED');
+
+  const isExitTicketActive =
+    exitTicketState.activity && exitTicketState.activity.status === 'OPEN';
+
+  const isSpeakerSpotlightDemo = isDemo && demoTab === 'SPEAKER';
+  const effectiveSpeaker = isSpeakerSpotlightDemo
+    ? { displayName: 'Budi Santoso (7A)' }
+    : speakingStudent;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
@@ -245,15 +594,15 @@ export function ProjectorSessionView({
 
       {/* Demo Controls (Only shown in Demo Mode) */}
       {isDemo && (
-        <div className="bg-slate-900 border-b border-slate-800 px-6 py-2.5 flex items-center justify-between text-xs">
+        <div className="bg-slate-900 border-b border-slate-800 px-6 py-2.5 flex flex-wrap items-center justify-between text-xs gap-2">
           <span className="text-slate-400 font-medium">
-            Simulasi Tampilan Proyektor: Klik tab di bawah untuk melihat respons layar:
+            Simulasi Tampilan Proyektor: Klik tab untuk menguji tampilan tiap tool:
           </span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <button
               onClick={() => setDemoTab('WAITING')}
               className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                demoTab === 'WAITING' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'
+                demoTab === 'WAITING' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400'
               }`}
             >
               1. Layar Gabung
@@ -277,17 +626,41 @@ export function ProjectorSessionView({
             <button
               onClick={() => setDemoTab('POLL')}
               className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                demoTab === 'POLL' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'
+                demoTab === 'POLL' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
               }`}
             >
               4. Polling Kelas
+            </button>
+            <button
+              onClick={() => setDemoTab('BRAINSTORM')}
+              className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                demoTab === 'BRAINSTORM' ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-400'
+              }`}
+            >
+              5. Papan Ide (Sticky Notes)
+            </button>
+            <button
+              onClick={() => setDemoTab('EXIT_TICKET')}
+              className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                demoTab === 'EXIT_TICKET' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+              }`}
+            >
+              6. Tiket Keluar
+            </button>
+            <button
+              onClick={() => setDemoTab('SPEAKER')}
+              className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                demoTab === 'SPEAKER' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-400'
+              }`}
+            >
+              7. Sorot Bicara
             </button>
           </div>
         </div>
       )}
 
       {/* Main Presentation Stage */}
-      <main className="flex-1 flex flex-col justify-center items-center p-4 sm:p-6 md:p-12 max-w-6xl 2xl:max-w-7xl 4k:max-w-[120rem] w-full mx-auto">
+      <main className="flex-1 flex flex-col justify-center items-center p-4 sm:p-6 md:p-10 max-w-7xl 2xl:max-w-7xl 4k:max-w-[120rem] w-full mx-auto relative">
         {/* Stage 1: Highlighted Question from Question Box */}
         {(featuredQuestion || (isDemo && demoTab === 'QUESTION')) && (
           <div className="w-full animate-in fade-in zoom-in-95 duration-300">
@@ -298,7 +671,7 @@ export function ProjectorSessionView({
         )}
 
         {/* Stage 2: Live Quiz Question */}
-        {(quizState.isActive || (isDemo && demoTab === 'QUIZ')) && (
+        {!featuredQuestion && (quizState.isActive || (isDemo && demoTab === 'QUIZ')) && (
           <div className="w-full max-w-4xl bg-slate-900 border-2 border-indigo-500/50 rounded-3xl p-8 md:p-12 shadow-2xl space-y-8 animate-in fade-in duration-300">
             <div className="flex items-center justify-between border-b border-slate-800 pb-6">
               <div className="flex items-center gap-3">
@@ -352,64 +725,100 @@ export function ProjectorSessionView({
         )}
 
         {/* Stage 3: Live Poll */}
-        {(pollState || (isDemo && demoTab === 'POLL')) && (
-          <div className="w-full max-w-4xl bg-slate-900 border-2 border-blue-500/50 rounded-3xl p-8 md:p-12 shadow-2xl space-y-8 animate-in fade-in duration-300">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-6">
-              <span className="px-3.5 py-1.5 rounded-xl bg-blue-600 text-white font-black text-sm">
-                Polling Kelas Langsung
-              </span>
-              <span className="text-sm font-semibold text-slate-400">
-                Respon Masuk Realtime
-              </span>
-            </div>
+        {!featuredQuestion &&
+          !quizState.isActive &&
+          (pollState || (isDemo && demoTab === 'POLL')) && (
+            <div className="w-full max-w-4xl bg-slate-900 border-2 border-blue-500/50 rounded-3xl p-8 md:p-12 shadow-2xl space-y-8 animate-in fade-in duration-300">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-6">
+                <span className="px-3.5 py-1.5 rounded-xl bg-blue-600 text-white font-black text-sm">
+                  Polling Kelas Langsung
+                </span>
+                <span className="text-sm font-semibold text-slate-400">
+                  Respon Masuk Realtime
+                </span>
+              </div>
 
-            <h2 className="text-2xl md:text-3xl font-black text-white leading-snug">
-              {pollState?.question ||
-                (isDemo && demoTab === 'POLL'
-                  ? 'Bagian materi manakah yang menurut Anda paling menantang?'
-                  : 'Pertanyaan polling...')}
-            </h2>
+              <h2 className="text-2xl md:text-3xl font-black text-white leading-snug">
+                {pollState?.question ||
+                  (isDemo && demoTab === 'POLL'
+                    ? 'Bagian materi manakah yang menurut Anda paling menantang?'
+                    : 'Pertanyaan polling...')}
+              </h2>
 
-            <div className="space-y-4 pt-2">
-              {(
-                pollState?.options.map((o) => {
-                  const count = pollState.distribution?.[o.id] || 0;
-                  const pct = pollState.percentages?.[o.id] || 0;
-                  return { id: o.id, text: o.optionText, count, percentage: pct };
-                }) ||
-                (isDemo && demoTab === 'POLL'
-                  ? [
-                      { id: '1', text: 'Hukum Keppler I & II', count: 18, percentage: 56 },
-                      { id: '2', text: 'Gaya Gravitasi Newton', count: 10, percentage: 31 },
-                      { id: '3', text: 'Kecepatan Orbit Satelit', count: 4, percentage: 13 },
-                    ]
-                  : [])
-              ).map((opt: { id: string; text: string; count: number; percentage: number }) => (
-                <div key={opt.id} className="space-y-1.5">
-                  <div className="flex justify-between text-base font-bold text-slate-200">
-                    <span>{opt.text}</span>
-                    <span className="font-mono text-blue-400">{opt.percentage || 0}% ({opt.count || 0})</span>
+              <div className="space-y-4 pt-2">
+                {(
+                  pollState?.options.map((o) => {
+                    const count = pollState.distribution?.[o.id] || 0;
+                    const pct = pollState.percentages?.[o.id] || 0;
+                    return { id: o.id, text: o.optionText, count, percentage: pct };
+                  }) ||
+                  (isDemo && demoTab === 'POLL'
+                    ? [
+                        { id: '1', text: 'Hukum Keppler I & II', count: 18, percentage: 56 },
+                        { id: '2', text: 'Gaya Gravitasi Newton', count: 10, percentage: 31 },
+                        { id: '3', text: 'Kecepatan Orbit Satelit', count: 4, percentage: 13 },
+                      ]
+                    : [])
+                ).map((opt: { id: string; text: string; count: number; percentage: number }) => (
+                  <div key={opt.id} className="space-y-1.5">
+                    <div className="flex justify-between text-base font-bold text-slate-200">
+                      <span>{opt.text}</span>
+                      <span className="font-mono text-blue-400">
+                        {opt.percentage || 0}% ({opt.count || 0})
+                      </span>
+                    </div>
+                    <div className="w-full h-4 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${opt.percentage || 0}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full h-4 bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
-                      style={{ width: `${opt.percentage || 0}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Stage 4: Default Waiting / Welcoming Screen */}
+        {/* Stage 4: Brainstorm Board (Papan Ide Sticky Notes) */}
         {!featuredQuestion &&
           !quizState.isActive &&
           !pollState &&
-          (!isDemo || demoTab === 'WAITING') && (
+          (isBrainstormActive || (isDemo && demoTab === 'BRAINSTORM')) && (
+            <div className="w-full animate-in fade-in duration-300">
+              <ProjectorBrainstormView
+                activity={isDemo && demoTab === 'BRAINSTORM' ? demoBrainstormActivity : brainstormState.activity}
+                ideas={isDemo && demoTab === 'BRAINSTORM' ? demoBrainstormIdeas : brainstormState.ideas}
+                totalIdeasCount={isDemo && demoTab === 'BRAINSTORM' ? demoBrainstormIdeas.length : brainstormState.totalCount}
+              />
+            </div>
+          )}
+
+        {/* Stage 5: Exit Ticket (Refleksi Kelas) */}
+        {!featuredQuestion &&
+          !quizState.isActive &&
+          !pollState &&
+          !isBrainstormActive &&
+          (isExitTicketActive || (isDemo && demoTab === 'EXIT_TICKET')) && (
+            <div className="w-full animate-in fade-in duration-300">
+              <ProjectorExitTicketView
+                activity={isDemo && demoTab === 'EXIT_TICKET' ? demoExitTicketActivity : exitTicketState.activity}
+                responseCount={isDemo && demoTab === 'EXIT_TICKET' ? 24 : exitTicketState.responseCount}
+                totalExpected={isDemo && demoTab === 'EXIT_TICKET' ? 32 : exitTicketState.totalExpected}
+                completionRate={isDemo && demoTab === 'EXIT_TICKET' ? 75 : exitTicketState.completionRate}
+              />
+            </div>
+          )}
+
+        {/* Stage 6: Default Waiting / Welcoming Screen */}
+        {!featuredQuestion &&
+          !quizState.isActive &&
+          !pollState &&
+          !isBrainstormActive &&
+          !isExitTicketActive &&
+          (!isDemo || demoTab === 'WAITING' || demoTab === 'SPEAKER') && (
             <div className="text-center space-y-8 max-w-3xl animate-in fade-in duration-300">
               <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-amber-950/80 border border-amber-500/50 text-amber-300 text-sm font-bold">
-                <Sparkles className="w-4 h-4 text-amber-400" />
+                <Radio className="w-4 h-4 text-amber-400 animate-pulse" />
                 <span>Sesi Kelas Siap Digunakan</span>
               </div>
 
@@ -450,6 +859,26 @@ export function ProjectorSessionView({
               </div>
             </div>
           )}
+
+        {/* Global Speaker Spotlight Banner (Raise Hand) */}
+        {effectiveSpeaker && (
+          <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300 max-w-lg w-full px-4">
+            <div className="flex items-center gap-3.5 px-6 py-3.5 rounded-2xl bg-indigo-950/95 border-2 border-indigo-400/60 shadow-2xl shadow-indigo-950/90 backdrop-blur-md">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500 text-white flex items-center justify-center animate-pulse shrink-0">
+                <Mic className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] uppercase font-extrabold tracking-widest text-indigo-300 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Giliran Berbicara Sekarang
+                </div>
+                <div className="text-lg md:text-xl font-black text-white truncate">
+                  {effectiveSpeaker.displayName}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Presentation Footer */}
@@ -463,4 +892,3 @@ export function ProjectorSessionView({
     </div>
   );
 }
-

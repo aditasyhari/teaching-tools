@@ -61,5 +61,20 @@ describe('JoinCodeRateLimitGuard', () => {
     expect(() => guard.canActivate(ip1Context)).toThrow(HttpException);
     expect(guard.canActivate(ip2Context)).toBe(true);
   });
+
+  it('SEC-001: check() helper accurately tracks attempts and provides retryAfterSeconds', () => {
+    const ip = '172.16.0.5';
+
+    for (let i = 0; i < 15; i++) {
+      const res = JoinCodeRateLimitGuard.check(ip);
+      expect(res.allowed).toBe(true);
+      expect(res.retryAfterSeconds).toBe(0);
+    }
+
+    const blocked = JoinCodeRateLimitGuard.check(ip);
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
+    expect(blocked.retryAfterSeconds).toBeLessThanOrEqual(60);
+  });
 });
 

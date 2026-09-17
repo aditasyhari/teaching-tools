@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { Sparkles, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import { BrandLogo } from '../common/brand-logo';
 
 export function LandingFooter(): React.JSX.Element {
   return (
@@ -9,14 +10,9 @@ export function LandingFooter(): React.JSX.Element {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand column */}
           <div className="md:col-span-2 space-y-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-500 text-stone-950 flex items-center justify-center font-black text-sm shadow-xs border border-amber-600/30">
-                <Sparkles className="w-4 h-4 fill-stone-950" />
-              </div>
-              <span className="font-extrabold text-lg text-stone-900 tracking-tight">
-                WaliKelas Teaching Tools
-              </span>
-            </div>
+            <Link href="/" className="inline-block focus:outline-none">
+              <BrandLogo size="md" />
+            </Link>
             <p className="text-xs sm:text-sm text-stone-600 max-w-md leading-relaxed">
               Platform perkakas pengajaran kelas interaktif independen. Memudahkan guru menghidupkan suasana kelas dengan Live Quiz, Live Poll, Timer, dan Random Picker tanpa beban teknis.
             </p>
