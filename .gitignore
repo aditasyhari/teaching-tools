@@ -42,3 +42,5 @@ Thumbs.db
 # Turborepo / Cache
 .turbo/
 
+.agent/*
+docs/*

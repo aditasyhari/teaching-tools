@@ -11,6 +11,7 @@
     "start:prod": "node dist/main",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "prisma db seed",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest run"
@@ -44,8 +45,12 @@
     "prisma": "^6.4.1",
     "rimraf": "^6.0.1",
     "source-map-support": "^0.5.21",
+    "tsx": "^4.23.13",
     "typescript": "^5.8.2",
     "unplugin-swc": "^1.5.1",
     "vitest": "^3.0.7"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

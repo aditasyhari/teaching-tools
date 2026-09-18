@@ -205,4 +205,37 @@ describe('AuthService', () => {
       expect(res.classrooms[0].name).toBe('Kelas 7A');
     });
   });
+
+  describe('isAdminEmail', () => {
+    it('returns true for emails with domain @walikelas.id', () => {
+      expect(authService.isAdminEmail('admin@walikelas.id')).toBe(true);
+      expect(authService.isAdminEmail('super.user@walikelas.id')).toBe(true);
+    });
+
+    it('returns true for emails specified in ADMIN_EMAILS env variable', () => {
+      mockConfig.get.mockImplementation((key: string) => {
+        if (key === 'ADMIN_EMAILS') return 'custom.admin@sekolah.id, special@gmail.com ';
+        return undefined;
+      });
+
+      expect(authService.isAdminEmail('custom.admin@sekolah.id')).toBe(true);
+      expect(authService.isAdminEmail('CUSTOM.ADMIN@SEKOLAH.ID')).toBe(true);
+      expect(authService.isAdminEmail('special@gmail.com')).toBe(true);
+    });
+
+    it('returns false for regular teacher emails not in ADMIN_EMAILS', () => {
+      mockConfig.get.mockImplementation((key: string) => {
+        if (key === 'ADMIN_EMAILS') return 'admin@walikelas.id';
+        return undefined;
+      });
+
+      expect(authService.isAdminEmail('guru@sekolah.id')).toBe(false);
+      expect(authService.isAdminEmail('user@gmail.com')).toBe(false);
+    });
+
+    it('handles empty or undefined emails safely', () => {
+      expect(authService.isAdminEmail('')).toBe(false);
+      expect(authService.isAdminEmail(null as any)).toBe(false);
+    });
+  });
 });

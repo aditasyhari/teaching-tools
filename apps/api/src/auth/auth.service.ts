@@ -18,6 +18,27 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
+  isAdminEmail(email: string): boolean {
+    if (!email) return false;
+    const normalized = email.trim().toLowerCase();
+
+    const adminEmailsEnv = this.config.get<string>('ADMIN_EMAILS') || '';
+    const adminList = adminEmailsEnv
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (adminList.includes(normalized)) {
+      return true;
+    }
+
+    if (normalized.endsWith('@walikelas.id')) {
+      return true;
+    }
+
+    return false;
+  }
+
   generateOAuthState(): string {
     return crypto.randomBytes(32).toString('hex');
   }
@@ -111,7 +132,8 @@ export class AuthService {
     }
 
     // 4. Upsert User & TeacherProfile in database
-    const role: UserRole = googleUser.email.endsWith('@walikelas.id') ? 'ADMIN' : 'TEACHER';
+    const isAdmin = this.isAdminEmail(googleUser.email);
+    const role: UserRole = isAdmin ? 'ADMIN' : 'TEACHER';
 
     const user = await this.prisma.user.upsert({
       where: { email: googleUser.email.toLowerCase() },
@@ -119,6 +141,7 @@ export class AuthService {
         googleId: googleUser.sub,
         name: googleUser.name,
         avatarUrl: googleUser.picture,
+        ...(isAdmin ? { role: 'ADMIN' } : {}),
       },
       create: {
         email: googleUser.email.toLowerCase(),

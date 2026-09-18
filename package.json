@@ -14,7 +14,8 @@
     "test": "pnpm -r run test",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "clean": "pnpm -r run clean"
+    "clean": "pnpm -r run clean",
+    "db:seed": "pnpm --filter @walikelas/api prisma:seed"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

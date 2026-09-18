@@ -78,11 +78,23 @@ describe('Sidebar organism', () => {
   });
 
   it('supports custom renderLink function', () => {
-    const renderLink = vi.fn(({ href, className, children, 'aria-current': ariaCurrent }) => (
-      <span data-testid="custom-link" data-href={href} aria-current={ariaCurrent} className={className}>
-        {children}
-      </span>
-    ));
+    const renderLink = vi.fn(
+      ({
+        href,
+        className,
+        children,
+        'aria-current': ariaCurrent,
+      }: {
+        href: string;
+        className: string;
+        children: React.ReactNode;
+        'aria-current'?: 'page';
+      }) => (
+        <span data-testid="custom-link" data-href={href} aria-current={ariaCurrent} className={className}>
+          {children}
+        </span>
+      ),
+    );
 
     render(<Sidebar brand={mockBrand} items={mockItems} renderLink={renderLink} />);
 
