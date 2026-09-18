@@ -9,7 +9,7 @@
 module.exports = {
   apps: [
     {
-      name: 'walikelas-api',
+      name: 'tools-wlks-api',
       cwd: './apps/api',
       script: 'dist/main.js',
       instances: 1,
@@ -22,7 +22,7 @@ module.exports = {
       },
     },
     {
-      name: 'walikelas-web',
+      name: 'tools-wlks-web',
       cwd: './apps/web',
       script: 'node_modules/next/dist/bin/next',
       args: 'start -p 3006',

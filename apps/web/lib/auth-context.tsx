@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User, TeacherProfile, Classroom, UserRole } from '@walikelas/types';
-import { apiClient } from './api';
+import { apiClient, getApiBaseUrl } from './api';
 import {
   fetchCurrentUser,
   logout as apiLogout,
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshAuth]);
 
   const loginWithGoogle = useCallback(() => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4006/api/v1';
+    const apiBase = getApiBaseUrl();
     window.location.href = `${apiBase}/auth/google`;
   }, []);
 

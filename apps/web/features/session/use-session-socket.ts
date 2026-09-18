@@ -14,6 +14,7 @@ import type {
   SessionErrorPayload,
 } from '@walikelas/types';
 import { SESSION_HEARTBEAT_INTERVAL_MS } from '@walikelas/config';
+import { getApiBaseUrl } from '../../lib/api';
 
 export type SocketConnectionStatus = 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'DISCONNECTED';
 
@@ -132,7 +133,7 @@ export function useSessionSocket(options: UseSessionSocketOptions) {
     if (!isTeacher && !isProjector && (!joinCode || !displayName)) return;
 
     // Robust origin resolution: safe against /api/v1 suffix and trailing slashes
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4006';
+    const apiUrl = getApiBaseUrl();
     let socketUrl: string;
     try {
       const parsed = new URL(apiUrl);
